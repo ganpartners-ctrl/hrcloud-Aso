@@ -527,7 +527,7 @@ hr.div { border: none; border-top: 1.5px solid var(--border); margin: 18px 0; }
       </div>
     </div>
     <div class="page-tabs">
-      <button class="page-tab active" id="tabBtnSignin" onclick="showPage('signin')">Sign-In</button>
+      <button class="page-tab active" id="tabBtnHome" onclick="showPage('home')">Home</button>
       <button class="page-tab" id="tabBtnMobile" onclick="showPage('mobile')">📱 Mobile App</button>
       <button class="page-tab" id="tabBtnAdmin" onclick="requireAdminThen('admin')">🔐 Admin</button>
       <button class="page-tab" id="tabBtnSetup" onclick="requireAdminThen('setup')">⚙️ Setup</button>
@@ -719,8 +719,38 @@ hr.div { border: none; border-top: 1.5px solid var(--border); margin: 18px 0; }
 <!-- TOAST -->
 <div class="toast-wrap" id="toastWrap"></div>
 
+<!-- ════════════════════════════════════════════════════ PAGE: HOME -->
+<div class="content" id="pageHome">
+  <div class="section-head">HRCloud Sign-In</div>
+  <div class="section-sub">Admin access and staff mobile app entry</div>
+
+  <div class="card">
+    <div class="card-title">Admin / Master Admin Login</div>
+    <div class="card-sub">Click a password below to open the admin login screen.</div>
+    <div style="display:grid;gap:8px">
+      <button class="btn btn-ghost btn-full" onclick="quickAdminLogin('platform','', 'PA001', 'HRCLOUD2025')">
+        Master Admin · PA001 · <strong>HRCLOUD2025</strong>
+      </button>
+      <button class="btn btn-ghost btn-full" onclick="quickAdminLogin('superadmin','CO001', 'SA001', 'Admin@TC2025')">
+        Company Admin · SA001 · <strong>Admin@TC2025</strong>
+      </button>
+      <button class="btn btn-ghost btn-full" onclick="quickAdminLogin('superadmin','CO002', 'SA002', 'Admin@TCL2025')">
+        Company Admin · SA002 · <strong>Admin@TCL2025</strong>
+      </button>
+    </div>
+  </div>
+
+  <div class="card" style="background:linear-gradient(135deg,#0f2350,#1a2040);border:none">
+    <div class="card-title" style="color:#fff">📱 Staff Mobile App</div>
+    <div style="color:rgba(255,255,255,.62);font-size:12px;line-height:1.7;margin-bottom:14px">
+      Staff sign in/out and phone registration are inside the Mobile App menu.
+    </div>
+    <button class="btn btn-primary" onclick="showPage('mobile')">Open Mobile App</button>
+  </div>
+</div>
+
 <!-- ════════════════════════════════════════════════════ PAGE: SIGN-IN -->
-<div class="content" id="pageSignin">
+<div class="content" id="pageSignin" style="display:none">
 
   <!-- Device Registration Screen (shown on first launch or if unbound) -->
   <div class="device-reg-screen" id="deviceRegScreen" style="display:none">
@@ -866,21 +896,6 @@ hr.div { border: none; border-top: 1.5px solid var(--border); margin: 18px 0; }
         <span>🕐</span> <span id="signinBtnLabel">Clock In / Out</span>
       </button>
 
-      <div style="margin-top:14px;border-top:1.5px solid var(--border);padding-top:14px">
-        <div class="card-title" style="font-size:13px;margin-bottom:6px">Admin / Master Admin Login</div>
-        <div class="card-sub" style="margin-bottom:10px">Click a password below to open the admin login screen.</div>
-        <div style="display:grid;gap:8px">
-          <button class="btn btn-ghost btn-full" onclick="quickAdminLogin('platform','', 'PA001', 'HRCLOUD2025')">
-            Master Admin · PA001 · <strong>HRCLOUD2025</strong>
-          </button>
-          <button class="btn btn-ghost btn-full" onclick="quickAdminLogin('superadmin','CO001', 'SA001', 'Admin@TC2025')">
-            Company Admin · SA001 · <strong>Admin@TC2025</strong>
-          </button>
-          <button class="btn btn-ghost btn-full" onclick="quickAdminLogin('superadmin','CO002', 'SA002', 'Admin@TCL2025')">
-            Company Admin · SA002 · <strong>Admin@TCL2025</strong>
-          </button>
-        </div>
-      </div>
     </div>
 
     <!-- Today's log -->
@@ -2704,11 +2719,11 @@ function showPage(page) {
     showAdminLoginScreen();
     return;
   }
-  ['signin','mobile','admin','setup'].forEach(function(p){
+  ['home','signin','mobile','admin','setup'].forEach(function(p){
     var el = document.getElementById('page'+p.charAt(0).toUpperCase()+p.slice(1));
-    if (el) el.style.display = p===page?'block':'none';
+    if (el) el.style.display = p===page || (page==='mobile' && p==='signin') ? 'block' : 'none';
   });
-  var pageOrder = ['signin','mobile','admin','setup'];
+  var pageOrder = ['home','mobile','admin','setup'];
   document.querySelectorAll('.page-tab').forEach(function(el,i){
     el.classList.toggle('active', pageOrder[i]===page);
   });
