@@ -396,6 +396,13 @@ body {
 .wizard-title { font-size: 20px; font-weight: 900; color: #fff; margin-bottom: 6px; }
 .wizard-sub   { font-size: 12px; color: rgba(255,255,255,.45); margin-bottom: 22px; line-height: 1.7; }
 
+.pin-dot {
+  width: 14px; height: 14px; border-radius: 50%;
+  border: 2px solid rgba(255,255,255,.3); background: transparent;
+  transition: all .15s;
+}
+.pin-dot.filled { background: var(--accent); border-color: var(--accent); }
+
 /* ── Device Registration Screen ── */
 .device-reg-screen {
   position: fixed; inset: 0; z-index: 500;
@@ -767,6 +774,42 @@ hr.div { border: none; border-top: 1.5px solid var(--border); margin: 18px 0; }
   <!-- Result screen (hidden initially) -->
   <div id="resultScreen" style="display:none"></div>
 
+  <!-- PIN Overlay -->
+  <div id="pinOverlay" style="display:none;position:fixed;inset:0;z-index:400;
+    background:rgba(13,18,38,.95);backdrop-filter:blur(8px);
+    display:none;align-items:center;justify-content:center;padding:20px">
+    <div style="background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.12);
+      border-radius:20px;padding:32px 28px;max-width:360px;width:100%;text-align:center">
+      <div style="font-size:40px;margin-bottom:12px">🔐</div>
+      <div style="font-size:18px;font-weight:900;color:#fff;margin-bottom:4px" id="pinOverlayName">Ahmad Farid</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.45);margin-bottom:24px">Enter your PIN to confirm clock in / out</div>
+      <div style="display:flex;gap:8px;justify-content:center;margin-bottom:20px" id="pinDots">
+        <div class="pin-dot"></div><div class="pin-dot"></div>
+        <div class="pin-dot"></div><div class="pin-dot"></div>
+        <div class="pin-dot"></div><div class="pin-dot"></div>
+      </div>
+      <div id="pinError" style="color:#FCA5A5;font-size:12px;margin-bottom:12px;display:none">
+        ✗ Incorrect PIN. Try again.
+      </div>
+      <!-- PIN numpad -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
+        <button class="btn btn-ghost" style="font-size:22px;font-weight:700;padding:16px;border-radius:12px" onclick="pinTap('1')">1</button>
+        <button class="btn btn-ghost" style="font-size:22px;font-weight:700;padding:16px;border-radius:12px" onclick="pinTap('2')">2</button>
+        <button class="btn btn-ghost" style="font-size:22px;font-weight:700;padding:16px;border-radius:12px" onclick="pinTap('3')">3</button>
+        <button class="btn btn-ghost" style="font-size:22px;font-weight:700;padding:16px;border-radius:12px" onclick="pinTap('4')">4</button>
+        <button class="btn btn-ghost" style="font-size:22px;font-weight:700;padding:16px;border-radius:12px" onclick="pinTap('5')">5</button>
+        <button class="btn btn-ghost" style="font-size:22px;font-weight:700;padding:16px;border-radius:12px" onclick="pinTap('6')">6</button>
+        <button class="btn btn-ghost" style="font-size:22px;font-weight:700;padding:16px;border-radius:12px" onclick="pinTap('7')">7</button>
+        <button class="btn btn-ghost" style="font-size:22px;font-weight:700;padding:16px;border-radius:12px" onclick="pinTap('8')">8</button>
+        <button class="btn btn-ghost" style="font-size:22px;font-weight:700;padding:16px;border-radius:12px" onclick="pinTap('9')">9</button>
+        <button class="btn btn-ghost" style="font-size:16px;padding:16px;border-radius:12px;color:rgba(255,255,255,.4)" onclick="pinClear()">✕</button>
+        <button class="btn btn-ghost" style="font-size:22px;font-weight:700;padding:16px;border-radius:12px" onclick="pinTap('0')">0</button>
+        <button class="btn btn-ghost" style="font-size:18px;padding:16px;border-radius:12px;color:rgba(255,255,255,.4)" onclick="pinBack()">⌫</button>
+      </div>
+      <button class="btn btn-ghost" onclick="closePinOverlay()" style="font-size:12px;color:rgba(255,255,255,.3)">Cancel</button>
+    </div>
+  </div>
+
   <!-- Sign-in form -->
   <div id="signinForm">
     <div class="card">
@@ -853,7 +896,7 @@ hr.div { border: none; border-top: 1.5px solid var(--border); margin: 18px 0; }
     <button class="tab active" onclick="setAdminTab('log')" id="tabLog">📋 Attendance Log</button>
     <button class="tab" onclick="setAdminTab('staff')" id="tabStaff">👥 Staff Register</button>
     <button class="tab" onclick="setAdminTab('geo')" id="tabGeo">📍 Geofence Config</button>
-    <button class="tab" onclick="setAdminTab('devices')" id="tabDevices">📱 Device Binding</button>
+    <button class="tab" onclick="setAdminTab('devices')" id="tabDevices">📱 Mobile App</button>
   </div>
 
   <div id="adminTabLog">
@@ -949,8 +992,35 @@ hr.div { border: none; border-top: 1.5px solid var(--border); margin: 18px 0; }
 </div>
 
   <div id="adminTabDevices" style="display:none">
+    <div class="card" style="background:linear-gradient(135deg,#0f2350,#1a2040);border:none">
+      <div class="card-title" style="color:#fff">📱 Mobile App Device Registration</div>
+      <div style="color:rgba(255,255,255,.62);font-size:12px;line-height:1.7;margin-bottom:14px">
+        Staff can register this phone here before using clock in/out. One phone should be linked to one staff member only.
+      </div>
+      <div class="input-row">
+        <div class="field">
+          <label class="label" style="color:rgba(255,255,255,.65)">Current Device ID</label>
+          <div class="device-badge" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.14);margin:0">
+            <div class="device-badge-id" id="mobileDeviceIdDisplay">—</div>
+          </div>
+        </div>
+        <div class="field">
+          <label class="label" style="color:rgba(255,255,255,.65)">Staff ID</label>
+          <input type="text" class="input" id="mobileDeviceRegInput" placeholder="E001"
+            autocomplete="off" autocapitalize="characters"
+            oninput="this.value=this.value.toUpperCase()"
+            onkeydown="if(event.key==='Enter') confirmDeviceReg('mobileDeviceRegInput')">
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <button class="btn btn-primary" onclick="confirmDeviceReg('mobileDeviceRegInput')">🔐 Register This Device</button>
+        <button class="btn btn-ghost" onclick="renderMobileDeviceRegistration()" style="color:#fff;border-color:rgba(255,255,255,.25)">🔄 Refresh Status</button>
+        <div id="mobileDeviceStatus" style="color:rgba(255,255,255,.7);font-size:12px"></div>
+      </div>
+    </div>
+
     <div class="card">
-      <div class="card-title">📱 Device Binding Management</div>
+      <div class="card-title">📱 Mobile App Device Binding Management</div>
       <div class="card-sub">Each staff member registers their phone once. Only their device can punch in/out for them. One phone = one staff member.</div>
       <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
         <button class="btn btn-ghost btn-sm" onclick="renderDeviceList()">🔄 Refresh</button>
@@ -1076,8 +1146,21 @@ hr.div { border: none; border-top: 1.5px solid var(--border); margin: 18px 0; }
     <div class="card">
       <div class="card-title">➕ Add Staff Manually</div>
       <div class="input-row">
-        <div class="field"><label class="label">Staff ID *</label><input class="input" id="msId" placeholder="E001"></div>
+        <div class="field"><label class="label">Staff ID *</label><input class="input" id="msId" placeholder="E001" oninput="this.value=this.value.toUpperCase()"></div>
         <div class="field"><label class="label">Employee No.</label><input class="input" id="msEmpNo" placeholder="EMP001"></div>
+      </div>
+      <div class="input-row">
+        <div class="field">
+          <label class="label">PIN / Password *</label>
+          <input class="input" id="msPin" type="password" placeholder="Min 4 digits (e.g. NRIC last 6)">
+          <div style="font-size:10px;color:var(--ts);margin-top:4px">
+            💡 Staff uses this PIN to confirm their identity when clocking in. Default: NRIC last 6 digits.
+          </div>
+        </div>
+        <div class="field">
+          <label class="label">Confirm PIN *</label>
+          <input class="input" id="msPin2" type="password" placeholder="Repeat PIN">
+        </div>
       </div>
       <div class="input-row">
         <div class="field"><label class="label">Full Name *</label><input class="input" id="msName" placeholder="Ahmad Farid bin Azman"></div>
@@ -1413,9 +1496,9 @@ async function seedDemoData() {
     { id:'CO002', name:'TechCorp Logistics Sdn. Bhd.',ssmNo:'202101056789', lhdnNo:'C 9876543210', epfNo:'EP 7654321', socsoNo:'SO 7654321', phone:'03-33456789', email:'hr@tclogistics.com.my',addr1:'Lot 5, Jalan Industri 3, Hicom',         city:'Shah Alam',    postcode:'40150', state:'Selangor',          country:'Malaysia', superAdminId:'SA002', superAdminPin:'Admin@TCL2025' },
   ];
   var demoStaff = [
-    { id:'E001', empNo:'EMP001', name:'Ahmad Farid bin Azman',       preferred:'Farid',    nric:'850101-14-1234', dept:'Finance',    grade:'G4', role:'HR Manager',      type:'Permanent',  companyId:'CO001', joinDate:'2018-03-15' },
-    { id:'E002', empNo:'EMP002', name:'Siti Nuraini binti Hassan',   preferred:'Ain',      nric:'900522-10-5678', dept:'HR',         grade:'G3', role:'HR Executive',    type:'Permanent',  companyId:'CO001', joinDate:'2019-06-01' },
-    { id:'E003', empNo:'EMP003', name:'Rajesh Kumar a/l Subramaniam',preferred:'Rajesh',   nric:'881115-08-3456', dept:'IT',         grade:'G4', role:'IT Manager',      type:'Permanent',  companyId:'CO001', joinDate:'2017-01-10' },
+    { id:'E001', empNo:'EMP001', name:'Ahmad Farid bin Azman',       preferred:'Farid',    nric:'850101-14-1234', pin:'141234', dept:'Finance',    grade:'G4', role:'HR Manager',      type:'Permanent',  companyId:'CO001', joinDate:'2018-03-15' },
+    { id:'E002', empNo:'EMP002', name:'Siti Nuraini binti Hassan',   preferred:'Ain',      nric:'900522-10-5678', pin:'105678', dept:'HR',         grade:'G3', role:'HR Executive',    type:'Permanent',  companyId:'CO001', joinDate:'2019-06-01' },
+    { id:'E003', empNo:'EMP003', name:'Rajesh Kumar a/l Subramaniam',preferred:'Rajesh',   nric:'881115-08-3456', pin:'083456', dept:'IT',         grade:'G4', role:'IT Manager',      type:'Permanent',  companyId:'CO001', joinDate:'2017-01-10' },
     { id:'E004', empNo:'EMP004', name:'Wei Ting Lim',                preferred:'Wei Ting', nric:'950308-14-7890', dept:'Sales',      grade:'G2', role:'Sales Executive', type:'Permanent',  companyId:'CO001', joinDate:'2021-04-01' },
     { id:'E005', empNo:'EMP005', name:'Nurul Hidayah binti Razak',   preferred:'Hidayah',  nric:'920720-04-2345', dept:'Operations', grade:'G2', role:'Operations Asst', type:'Probation',  companyId:'CO001', joinDate:'2022-10-01' },
   ];
@@ -1759,6 +1842,17 @@ async function doSignIn() {
   // ── DEVICE BINDING CHECK ─────────────────────────────────────────
   if (!deviceBindingCheck(sid)) return; // blocks if wrong staff on this device
 
+  // ── PIN / PASSWORD CHECK ────────────────────────────────────────
+  var emp0 = staff.find(function(e){ return e.id === sid || e.empNo === sid; });
+  if (emp0 && emp0.pin) {
+    var pinInput = document.getElementById('pinOverlay');
+    if (!pinInput) {
+      // Show PIN overlay
+      showPinOverlay(sid, emp0);
+      return;
+    }
+  }
+
   // ── HARD GPS CHECK ────────────────────────────────────────────────
   if (GPS_REQUIRED) {
     if (!geoGranted || userLat === null) {
@@ -2028,7 +2122,10 @@ function setAdminTab(tab) {
     if (panel) panel.style.display = t===tab?'block':'none';
     if (btn)   btn.classList.toggle('active', t===tab);
   });
-  if (tab==='devices') renderDeviceList();
+  if (tab==='devices') {
+    renderMobileDeviceRegistration();
+    renderDeviceList();
+  }
 }
 
 async function clearTodayLog() {
@@ -2181,12 +2278,21 @@ async function addStaffManual() {
   var name = (document.getElementById('msName')||{}).value.trim();
   if (!sid || !name) { showToast('Staff ID and Full Name are required', 'err'); return; }
   if (staff.find(function(e){ return e.id===sid; })) { showToast('Staff ID '+sid+' already exists', 'err'); return; }
+  var pin1 = (document.getElementById('msPin')||{}).value.trim();
+  var pin2 = (document.getElementById('msPin2')||{}).value.trim();
+  var nricVal = (document.getElementById('msNRIC')||{}).value.trim();
+  var defaultPin = nricVal ? nricVal.replace(/[^0-9]/g,'').slice(-6) : '000000';
+  if (!pin1) pin1 = defaultPin;
+  if (!pin2) pin2 = pin1;
+  if (pin1 !== pin2) { showToast('PINs do not match', 'err'); return; }
+  if (pin1.length < 4) { showToast('PIN must be at least 4 characters', 'err'); return; }
   var newStaff = {
     id: sid,
     empNo: (document.getElementById('msEmpNo')||{}).value.trim() || sid,
     name: name,
     preferred: (document.getElementById('msPref')||{}).value.trim(),
-    nric:  (document.getElementById('msNRIC')||{}).value.trim(),
+    nric:  nricVal,
+    pin:   pin1,
     dept:  (document.getElementById('msDept')||{}).value.trim(),
     grade: (document.getElementById('msGrade')||{}).value.trim(),
     role:  (document.getElementById('msRole')||{}).value.trim(),
@@ -2297,7 +2403,9 @@ async function processCSV(file, type) {
         if (!sid || !name) continue;
         var ex = staff.find(function(e){ return e.id===sid; });
         var st = ex || { id:sid };
-        Object.assign(st, { empNo:r['Employee No']||r['empNo']||st.empNo||sid, name:name, preferred:r['Preferred Name']||st.preferred||'', nric:r['NRIC']||st.nric||'', dept:r['Department']||r['dept']||st.dept||'', grade:r['Grade']||r['grade']||st.grade||'', role:r['Role']||r['role']||st.role||'', type:r['Employment Type']||r['type']||st.type||'Permanent', companyId:r['Company ID']||r['companyId']||st.companyId||(companies[0]&&companies[0].id)||'CO001', joinDate:r['Join Date']||r['joinDate']||st.joinDate||'' });
+        var csvNric=r['NRIC']||st.nric||'';
+        var csvPin2=r['PIN']||r['pin']||r['Password']||(csvNric?csvNric.replace(/[^0-9]/g,'').slice(-6):'000000');
+        Object.assign(st, { empNo:r['Employee No']||r['empNo']||st.empNo||sid, name:name, preferred:r['Preferred Name']||st.preferred||'', nric:csvNric, pin:st.pin||csvPin2, dept:r['Department']||r['dept']||st.dept||'', grade:r['Grade']||r['grade']||st.grade||'', role:r['Role']||r['role']||st.role||'', type:r['Employment Type']||r['type']||st.type||'Permanent', companyId:r['Company ID']||r['companyId']||st.companyId||(companies[0]&&companies[0].id)||'CO001', joinDate:r['Join Date']||r['joinDate']||st.joinDate||'' });
         await dbPut('staff', st);
         if (!ex) { staff.push(st); added++; } else updated++;
       }
@@ -2799,6 +2907,99 @@ async function wizardFinish(addGeo) {
 // ── Run admin session check in boot ───────────────────────────────────
 // Called after loadAllData completes
 
+
+// ══════════════════════════════════════════════════════════════════════
+// PIN AUTHENTICATION
+// ══════════════════════════════════════════════════════════════════════
+
+var pinBuffer = '';
+var pinTargetEmp = null;
+var pinTargetSid = '';
+
+function showPinOverlay(sid, emp) {
+  pinBuffer = '';
+  pinTargetSid = sid;
+  pinTargetEmp = emp;
+  updatePinDots();
+  var nameEl = document.getElementById('pinOverlayName');
+  if (nameEl) nameEl.textContent = emp.preferred || emp.name.split(' ')[0];
+  var errEl = document.getElementById('pinError');
+  if (errEl) errEl.style.display = 'none';
+  var overlay = document.getElementById('pinOverlay');
+  if (overlay) overlay.style.display = 'flex';
+}
+
+function closePinOverlay() {
+  var overlay = document.getElementById('pinOverlay');
+  if (overlay) overlay.style.display = 'none';
+  pinBuffer = '';
+  pinTargetEmp = null;
+  pinTargetSid = '';
+}
+
+function updatePinDots() {
+  var dots = document.querySelectorAll('.pin-dot');
+  dots.forEach(function(d, i) {
+    d.classList.toggle('filled', i < pinBuffer.length);
+  });
+}
+
+function pinTap(digit) {
+  if (pinBuffer.length >= 6) return;
+  pinBuffer += digit;
+  updatePinDots();
+  if (pinBuffer.length >= pinTargetEmp.pin.length) {
+    setTimeout(checkPin, 200);
+  }
+}
+
+function pinBack() {
+  pinBuffer = pinBuffer.slice(0, -1);
+  updatePinDots();
+}
+
+function pinClear() {
+  pinBuffer = '';
+  updatePinDots();
+}
+
+function checkPin() {
+  if (!pinTargetEmp) return;
+  if (pinBuffer === pinTargetEmp.pin) {
+    // PIN correct — close overlay and proceed with sign-in
+    closePinOverlay();
+    // Remove the emp0.pin check flag so doSignIn proceeds past the PIN gate
+    var _empPin = pinTargetEmp.pin;
+    pinTargetEmp.pin = null;  // temporarily clear so doSignIn skips PIN gate
+    doSignIn();
+    pinTargetEmp.pin = _empPin;  // restore
+  } else {
+    // Wrong PIN
+    pinBuffer = '';
+    updatePinDots();
+    var errEl = document.getElementById('pinError');
+    if (errEl) { errEl.style.display = 'block'; }
+    // Shake animation
+    var overlay = document.querySelector('#pinOverlay > div');
+    if (overlay) {
+      overlay.style.transform = 'translateX(-8px)';
+      setTimeout(function(){ overlay.style.transform = 'translateX(8px)'; }, 100);
+      setTimeout(function(){ overlay.style.transform = 'translateX(-4px)'; }, 200);
+      setTimeout(function(){ overlay.style.transform = 'translateX(0)'; }, 300);
+    }
+  }
+}
+
+// Admin: reset a staff member's PIN
+function adminResetPin(empId, newPin) {
+  var emp2 = staff.find(function(e){ return e.id===empId; });
+  if (!emp2) { showToast('Staff not found', 'err'); return; }
+  emp2.pin = newPin || emp2.nric.replace(/[^0-9]/g,'').slice(-6);
+  dbPut('staff', emp2);
+  lsSaveAll('staff', staff);
+  showToast('PIN reset for ' + emp2.name, 'ok');
+}
+
 // ══════════════════════════════════════════════════════════════════════
 // DEVICE BINDING — One phone = one staff member
 // ══════════════════════════════════════════════════════════════════════
@@ -2886,6 +3087,7 @@ async function checkDeviceBinding() {
   // Show device ID in registration screen
   var did = document.getElementById('deviceIdDisplay');
   if (did) did.textContent = token;
+  renderMobileDeviceRegistration();
 
   if (!localEmpId) {
     // No local binding — show registration screen
@@ -2919,9 +3121,27 @@ function showDeviceRegScreen(token) {
   if (inp) setTimeout(function(){ inp.focus(); }, 300);
 }
 
+function renderMobileDeviceRegistration() {
+  var token = getOrCreateDeviceToken();
+  var did = document.getElementById('mobileDeviceIdDisplay');
+  if (did) did.textContent = token;
+
+  var boundId = getBoundEmpId();
+  var status = document.getElementById('mobileDeviceStatus');
+  if (!status) return;
+
+  if (!boundId) {
+    status.textContent = 'This device is not registered yet.';
+    return;
+  }
+
+  var emp = staff.find(function(e){ return e.id===boundId; });
+  status.textContent = 'Registered to ' + (emp ? emp.name + ' (' + emp.id + ')' : boundId) + '.';
+}
+
 // ── Confirm device registration ────────────────────────────────────────
-async function confirmDeviceReg() {
-  var inp   = document.getElementById('deviceRegInput');
+async function confirmDeviceReg(inputId) {
+  var inp   = document.getElementById(inputId || 'deviceRegInput');
   var empId = inp ? inp.value.trim().toUpperCase() : '';
   if (!empId) { showToast('Enter your Staff ID to register', 'err'); return; }
 
@@ -2957,6 +3177,7 @@ async function confirmDeviceReg() {
   if (screen) screen.style.display = 'none';
 
   activateDeviceBound(binding, token);
+  renderMobileDeviceRegistration();
   showToast('✓ Device registered to ' + emp.name, 'ok');
 }
 
