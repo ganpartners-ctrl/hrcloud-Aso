@@ -1,0 +1,35 @@
+services:
+  - type: web
+    name: hrcloud-malaysia-api
+    runtime: node
+    rootDir: backend
+    plan: starter
+    buildCommand: npm install --omit=dev
+    preDeployCommand: npm run migrate
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: hrcloud-malaysia-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 8h
+      - key: PLATFORM_ADMIN_ID
+        value: PA001
+      - key: PLATFORM_ADMIN_PASS
+        sync: false
+      - key: NODE_ENV
+        value: production
+      - key: PGSSL
+        value: true
+      - key: ALLOWED_ORIGINS
+        value: https://YOUR_GITHUB_USERNAME.github.io
+
+databases:
+  - name: hrcloud-malaysia-db
+    plan: starter
+    databaseName: hrcloud_malaysia
+    user: hrcloud

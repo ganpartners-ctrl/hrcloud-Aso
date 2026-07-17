@@ -1,0 +1,19 @@
+# Backend
+backend/node_modules/
+backend/.env
+backend/*.log
+backend/npm-debug.log*
+
+# Frontend
+frontend/.DS_Store
+
+# OS
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+
+# Editor
+.vscode/
+.idea/
+*.swp

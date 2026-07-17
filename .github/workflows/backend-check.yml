@@ -1,0 +1,62 @@
+name: Backend check
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  syntax-and-health:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: hrcloud
+          POSTGRES_PASSWORD: hrcloud_pass
+          POSTGRES_DB: hrcloud_malaysia
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U hrcloud -d hrcloud_malaysia"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://hrcloud:hrcloud_pass@localhost:5432/hrcloud_malaysia
+      JWT_SECRET: github-actions-test-secret
+      NODE_ENV: test
+      PORT: 4000
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install backend dependencies
+        run: npm install --no-audit --no-fund
+      - name: Check scripts
+        run: |
+          node --check src/server.js
+          node --check scripts/import_company_staff_csv.js
+      - name: Run migrations
+        run: npm run migrate
+      - name: Seed demo data
+        run: npm run seed
+      - name: Start API and check health
+        shell: bash
+        run: |
+          npm start &
+          API_PID=$!
+          for i in {1..20}; do
+            if curl -fsS http://127.0.0.1:4000/health; then
+              kill $API_PID
+              exit 0
+            fi
+            sleep 2
+          done
+          kill $API_PID
+          exit 1
