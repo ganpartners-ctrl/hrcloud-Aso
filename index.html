@@ -528,6 +528,7 @@ hr.div { border: none; border-top: 1.5px solid var(--border); margin: 18px 0; }
     </div>
     <div class="page-tabs">
       <button class="page-tab active" id="tabBtnSignin" onclick="showPage('signin')">Sign-In</button>
+      <button class="page-tab" id="tabBtnMobile" onclick="showPage('mobile')">📱 Mobile App</button>
       <button class="page-tab" id="tabBtnAdmin" onclick="requireAdminThen('admin')">🔐 Admin</button>
       <button class="page-tab" id="tabBtnSetup" onclick="requireAdminThen('setup')">⚙️ Setup</button>
     </div>
@@ -871,6 +872,61 @@ hr.div { border: none; border-top: 1.5px solid var(--border); margin: 18px 0; }
       <div class="card-title">📋 Today's Sign-Ins</div>
       <div class="card-sub" id="todayCount">No records yet</div>
       <div id="todayLog"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════ PAGE: MOBILE APP -->
+<div class="content" id="pageMobile" style="display:none">
+  <div class="section-head">📱 Mobile App</div>
+  <div class="section-sub">Staff login, phone registration and device binding</div>
+
+  <div class="card" id="mobileLoginCard">
+    <div class="card-title">Staff Login</div>
+    <div class="card-sub">Enter your Staff ID and PIN / password before registering this phone.</div>
+    <div class="input-row">
+      <div class="field">
+        <label class="label">User Name / Staff ID</label>
+        <input class="input" id="mobileLoginId" placeholder="E001" autocomplete="off" autocapitalize="characters"
+          oninput="this.value=this.value.toUpperCase()"
+          onkeydown="if(event.key==='Enter')document.getElementById('mobileLoginPw').focus()">
+      </div>
+      <div class="field">
+        <label class="label">User Password / PIN</label>
+        <input class="input" id="mobileLoginPw" type="password" placeholder="e.g. 141234"
+          onkeydown="if(event.key==='Enter')doMobileLogin()">
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="doMobileLogin()">🔐 Login to Mobile App</button>
+    <div id="mobileLoginErr" style="color:var(--red);font-size:12px;font-weight:700;margin-top:10px"></div>
+    <div style="font-size:11px;color:var(--ts);line-height:1.7;margin-top:12px">
+      Demo staff login: <strong>E001</strong> / <strong>141234</strong>. The password is the staff PIN set in Setup → Staff.
+    </div>
+  </div>
+
+  <div id="mobilePortalCard" style="display:none">
+    <div class="card" style="background:linear-gradient(135deg,#0f2350,#1a2040);border:none">
+      <div class="card-title" style="color:#fff">Register This Device</div>
+      <div style="color:rgba(255,255,255,.62);font-size:12px;line-height:1.7;margin-bottom:14px">
+        After login, click register to bind this phone to your staff account. Only this device can clock in/out for your Staff ID.
+      </div>
+      <div class="input-row">
+        <div class="field">
+          <label class="label" style="color:rgba(255,255,255,.65)">Logged In User</label>
+          <div class="input" id="mobileLoggedInUser" style="background:rgba(255,255,255,.08);color:#fff">—</div>
+        </div>
+        <div class="field">
+          <label class="label" style="color:rgba(255,255,255,.65)">Current Device ID</label>
+          <div class="device-badge" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.14);margin:0">
+            <div class="device-badge-id" id="staffMobileDeviceIdDisplay">—</div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <button class="btn btn-primary" onclick="registerLoggedInMobileDevice()">🔐 Register & Bind This Phone</button>
+        <button class="btn btn-ghost" onclick="doMobileLogout()" style="color:#fff;border-color:rgba(255,255,255,.25)">Sign Out</button>
+        <div id="staffMobileDeviceStatus" style="color:rgba(255,255,255,.7);font-size:12px"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -1780,6 +1836,97 @@ function renderMap(zone, uLat, uLng) {
 // SIGN-IN FLOW
 // ══════════════════════════════════════════════════════════════════════
 var currentStaffId = '';
+var mobileStaffSession = null;
+
+function findStaffByLoginId(id) {
+  var sid = (id || '').trim().toUpperCase();
+  return staff.find(function(e){ return e.id === sid || e.empNo === sid; }) || null;
+}
+
+function doMobileLogin() {
+  var id = (document.getElementById('mobileLoginId') || {}).value || '';
+  var pw = (document.getElementById('mobileLoginPw') || {}).value || '';
+  var err = document.getElementById('mobileLoginErr');
+  if (err) err.textContent = '';
+
+  var emp = findStaffByLoginId(id);
+  if (!emp) {
+    if (err) err.textContent = 'Staff ID not found. Please check your user name.';
+    return;
+  }
+  if ((emp.pin || '') !== pw) {
+    if (err) err.textContent = 'Incorrect password / PIN.';
+    return;
+  }
+
+  mobileStaffSession = { id: emp.id, name: emp.name };
+  renderStaffMobilePortal();
+  showToast('Logged in to Mobile App as ' + emp.name, 'ok');
+}
+
+function doMobileLogout() {
+  mobileStaffSession = null;
+  var pw = document.getElementById('mobileLoginPw');
+  if (pw) pw.value = '';
+  renderStaffMobilePortal();
+}
+
+function renderStaffMobilePortal() {
+  var loginCard = document.getElementById('mobileLoginCard');
+  var portalCard = document.getElementById('mobilePortalCard');
+  if (loginCard) loginCard.style.display = mobileStaffSession ? 'none' : 'block';
+  if (portalCard) portalCard.style.display = mobileStaffSession ? 'block' : 'none';
+
+  var token = getOrCreateDeviceToken();
+  var did = document.getElementById('staffMobileDeviceIdDisplay');
+  if (did) did.textContent = token;
+
+  if (!mobileStaffSession) return;
+
+  var emp = staff.find(function(e){ return e.id === mobileStaffSession.id; });
+  var user = document.getElementById('mobileLoggedInUser');
+  if (user) user.textContent = emp ? emp.name + ' (' + emp.id + ')' : mobileStaffSession.id;
+
+  var boundId = getBoundEmpId();
+  var status = document.getElementById('staffMobileDeviceStatus');
+  if (!status) return;
+  if (!boundId) {
+    status.textContent = 'This phone is not registered yet.';
+  } else if (boundId === mobileStaffSession.id) {
+    status.textContent = 'This phone is already registered to your account.';
+  } else {
+    status.textContent = 'This phone is currently registered to ' + boundId + '. Registering will transfer it to this login.';
+  }
+}
+
+async function registerLoggedInMobileDevice() {
+  if (!mobileStaffSession) {
+    showToast('Please login first.', 'err');
+    return;
+  }
+  var emp = staff.find(function(e){ return e.id === mobileStaffSession.id; });
+  if (!emp) {
+    showToast('Staff record not found.', 'err');
+    return;
+  }
+
+  var token = getOrCreateDeviceToken();
+  var all = await getAllBindings();
+  var existing = all.find(function(b){ return b.empId === emp.id && b.active; });
+  if (existing && existing.deviceToken !== token) {
+    var proceed = confirm(emp.name + ' is already registered on another device.\n\nClick OK to transfer registration to this phone.');
+    if (!proceed) return;
+    existing.active = false;
+    await dbPut(DEVICE_BIND_STORE, existing);
+  }
+
+  var binding = await saveBindingToDB(emp.id, token);
+  saveLocalBinding(emp.id, token);
+  activateDeviceBound(binding, token);
+  renderStaffMobilePortal();
+  renderMobileDeviceRegistration();
+  showToast('Device registered to ' + emp.name, 'ok');
+}
 
 function onStaffIdInput(val) {
   currentStaffId = val.toUpperCase();
@@ -2541,13 +2688,15 @@ function showPage(page) {
     showAdminLoginScreen();
     return;
   }
-  ['signin','admin','setup'].forEach(function(p){
+  ['signin','mobile','admin','setup'].forEach(function(p){
     var el = document.getElementById('page'+p.charAt(0).toUpperCase()+p.slice(1));
     if (el) el.style.display = p===page?'block':'none';
   });
+  var pageOrder = ['signin','mobile','admin','setup'];
   document.querySelectorAll('.page-tab').forEach(function(el,i){
-    el.classList.toggle('active', ['signin','admin','setup'][i]===page);
+    el.classList.toggle('active', pageOrder[i]===page);
   });
+  if (page==='mobile') renderStaffMobilePortal();
   if (page==='admin') renderAdminDash();
   if (page==='setup') { renderCoList(); renderLicenseList(); }
 }
