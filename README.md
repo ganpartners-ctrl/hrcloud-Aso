@@ -4,9 +4,9 @@
 
 | URL | What it is |
 |-----|-----------|
-| `https://hrcloud-malaysia-aso.vercel.app/` | **Staff Sign-In app** (clock in/out, geofence, device binding) |
-| `https://hrcloud-malaysia-aso.vercel.app/app/` | **Main HRCloud app** (payroll, EA/Form E, leave, reports) |
-| `https://hrcloud-malaysia-aso.vercel.app/signin` | Sign-In app (explicit URL) |
+| `https://hrcloud-malaysia-aso.vercel.app/` | **Main HRCloud app** (payroll, EA/Form E, leave, reports) |
+| `https://hrcloud-malaysia-aso.vercel.app/app/` | **Main HRCloud app** (same as root) |
+| `https://hrcloud-malaysia-aso.vercel.app/signin` | Staff Sign-In / Mobile App (clock in/out, geofence, device binding) |
 | `https://hrcloud-malaysia-aso.vercel.app/templates/` | Import CSV/XLSX templates |
 
 ---
@@ -16,12 +16,12 @@
 ```
 hrcloud-malaysia/
 │
-├── index.html              ← HRCloud Sign-In app (161KB, served at /)
-├── signin.html             ← Same — explicit /signin URL
+├── index.html              ← Main HRCloud Enterprise app (served at /)
+├── signin.html             ← Staff Sign-In / Mobile App at /signin
 ├── vercel.json             ← Vercel routing config
 │
 ├── app/
-│   └── index.html          ← Main HRCloud Enterprise app (6.4MB, at /app/)
+│   └── index.html          ← Main HRCloud Enterprise app (same as root, at /app/)
 │
 ├── templates/
 │   ├── HRCloud_Employee_Import_Template.xlsx
@@ -60,8 +60,9 @@ git push origin main
 
 ### Step 2 — Vercel auto-deploys
 Vercel detects the push and deploys automatically.
-- Root `/` serves the Sign-In app
+- Root `/` serves the main HRCloud app
 - `/app/` serves the main HRCloud app
+- `/signin` serves the Staff Sign-In / Mobile App
 - `/templates/` serves import files
 
 ---
