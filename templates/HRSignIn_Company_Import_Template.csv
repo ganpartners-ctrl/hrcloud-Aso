@@ -1,0 +1,11 @@
+# HRCloud Sign-In — Company Import Template
+# Instructions:
+#   1. Delete ALL rows starting with # before uploading
+#   2. One row per company
+#   3. Super Admin ID and Password = credentials to log in as company admin
+#   4. SSM No must be unique — used as company identifier
+#   5. Save as CSV UTF-8 before uploading
+Company Name,SSM No,LHDN No,EPF No,SOCSO No,Phone,Email,Address,City,Postcode,State,Country,Super Admin ID,Super Admin Password
+TechCorp Sdn. Bhd.,202001012345,C 1234567890,EP 1234567,SO 1234567,03-22345678,hr@techcorp.com.my,"Level 18, Menara TechCorp, Jalan Ampang",Kuala Lumpur,50450,W.P. Kuala Lumpur,Malaysia,SA001,Admin@TC2025
+TechCorp Logistics Sdn. Bhd.,202101056789,C 9876543210,EP 7654321,SO 7654321,03-33456789,hr@tclogistics.com.my,"Lot 5, Jalan Industri 3, Hicom",Shah Alam,40150,Selangor,Malaysia,SA002,Admin@TCL2025
+ABC Manufacturing Sdn. Bhd.,202201098765,C 1111111111,EP 2222222,SO 2222222,04-44556677,hr@abcmfg.com.my,"No. 5, Jalan Perindustrian 2",Penang,10350,Pulau Pinang,Malaysia,SA003,Admin@ABC2025

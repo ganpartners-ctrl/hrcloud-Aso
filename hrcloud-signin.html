@@ -1,0 +1,3308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>HRCloud Sign-In</title>
+<style>
+/* ── Tokens ── */
+:root {
+  --accent:   #4F6EF7;
+  --accentD:  #3451D1;
+  --accentL:  #EEF1FE;
+  --green:    #059669;
+  --greenL:   #D1FAE5;
+  --red:      #E5374A;
+  --redL:     #FEE8EA;
+  --amber:    #D97706;
+  --amberL:   #FEF3C7;
+  --purple:   #7C3AED;
+  --bg:       #F0F4FF;
+  --surface:  #E8EEFF;
+  --card:     #FFFFFF;
+  --border:   #DDE3F5;
+  --tp:       #0D1226;
+  --ts:       #4A5374;
+  --tm:       #B8C0DC;
+  --radius:   14px;
+  --shadow:   0 4px 24px rgba(79,110,247,.10);
+  --shadow-lg:0 8px 40px rgba(79,110,247,.16);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--tp);
+  min-height: 100vh;
+  font-size: 14px;
+}
+/* ── Layout ── */
+.app { display: flex; flex-direction: column; min-height: 100vh; }
+.top-bar {
+  background: linear-gradient(135deg, #0D1226 0%, #1a2040 100%);
+  padding: 14px 20px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 100;
+  box-shadow: 0 2px 12px rgba(0,0,0,.3);
+}
+.top-bar .brand {
+  display: flex; align-items: center; gap: 10px;
+}
+.brand-icon {
+  width: 38px; height: 38px; background: var(--accent);
+  border-radius: 10px; display: flex; align-items: center; justify-content: center;
+  font-weight: 900; color: #fff; font-size: 16px; letter-spacing: -1px;
+}
+.brand-text { color: #fff; }
+.brand-text .b1 { font-weight: 800; font-size: 15px; letter-spacing: .3px; }
+.brand-text .b2 { font-size: 10px; color: rgba(255,255,255,.45); margin-top: 1px; }
+.top-right { display: flex; align-items: center; gap: 10px; }
+.page-tabs {
+  display: flex; background: rgba(255,255,255,.08); border-radius: 10px; padding: 3px;
+}
+.page-tab {
+  padding: 6px 14px; border-radius: 8px; color: rgba(255,255,255,.5);
+  cursor: pointer; font-size: 12px; font-weight: 600; transition: all .18s;
+  border: none; background: transparent; font-family: inherit;
+}
+.page-tab.active {
+  background: var(--accent); color: #fff;
+}
+.content { flex: 1; padding: 20px; max-width: 960px; margin: 0 auto; width: 100%; }
+
+/* ── Cards ── */
+.card {
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: var(--radius); padding: 20px;
+  box-shadow: var(--shadow); margin-bottom: 16px;
+}
+.card-title {
+  font-weight: 800; font-size: 15px; color: var(--tp);
+  margin-bottom: 4px; display: flex; align-items: center; gap: 8px;
+}
+.card-sub { font-size: 11px; color: var(--ts); margin-bottom: 16px; }
+
+/* ── Buttons ── */
+.btn {
+  padding: 10px 20px; border: none; border-radius: 10px;
+  font-weight: 700; font-size: 13px; cursor: pointer;
+  font-family: inherit; transition: all .18s; display: inline-flex;
+  align-items: center; gap: 7px;
+}
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accentD); transform: translateY(-1px); }
+.btn-green { background: var(--green); color: #fff; }
+.btn-green:hover { background: #047857; }
+.btn-red { background: var(--red); color: #fff; }
+.btn-red:hover { background: #c01a2b; }
+.btn-ghost {
+  background: var(--accentL); color: var(--accent);
+  border: 1.5px solid var(--border);
+}
+.btn-sm { padding: 7px 14px; font-size: 12px; border-radius: 8px; }
+.btn-full { width: 100%; justify-content: center; }
+.btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+/* ── Forms ── */
+.field { margin-bottom: 14px; }
+.label {
+  display: block; font-size: 11px; font-weight: 700;
+  color: var(--ts); margin-bottom: 6px; letter-spacing: .5px; text-transform: uppercase;
+}
+.input, .select {
+  width: 100%; padding: 10px 13px; border: 1.5px solid var(--border);
+  border-radius: 10px; font-size: 13px; font-family: inherit;
+  background: var(--bg); color: var(--tp); transition: border .18s;
+  outline: none;
+}
+.input:focus, .select:focus { border-color: var(--accent); background: #fff; }
+.input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media(max-width:560px){ .input-row { grid-template-columns: 1fr; } }
+
+/* ── Status badges ── */
+.badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700;
+}
+.badge-green  { background: var(--greenL); color: var(--green); }
+.badge-red    { background: var(--redL);   color: var(--red);   }
+.badge-amber  { background: var(--amberL); color: var(--amber); }
+.badge-blue   { background: var(--accentL);color: var(--accent);}
+
+/* ── Tables ── */
+.tbl { width: 100%; border-collapse: collapse; font-size: 12px; }
+.tbl th {
+  background: var(--bg); color: var(--ts); font-size: 11px;
+  font-weight: 700; text-align: left; padding: 8px 12px;
+  border-bottom: 1.5px solid var(--border); white-space: nowrap;
+}
+.tbl td {
+  padding: 9px 12px; border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.tbl tr:hover td { background: var(--bg); }
+
+/* ── Sign-In specific ── */
+.signin-hero {
+  background: linear-gradient(135deg, #0D1226 0%, #1a2040 60%, #0f2350 100%);
+  border-radius: var(--radius); padding: 32px 28px;
+  color: #fff; margin-bottom: 20px; position: relative; overflow: hidden;
+}
+.signin-hero::before {
+  content: '';
+  position: absolute; top: -40px; right: -40px;
+  width: 200px; height: 200px;
+  background: radial-gradient(circle, rgba(79,110,247,.3) 0%, transparent 70%);
+  border-radius: 50%;
+}
+.signin-hero::after {
+  content: '';
+  position: absolute; bottom: -60px; left: 30%;
+  width: 280px; height: 280px;
+  background: radial-gradient(circle, rgba(5,150,105,.15) 0%, transparent 70%);
+  border-radius: 50%;
+}
+.hero-title { font-size: 24px; font-weight: 900; margin-bottom: 6px; position: relative; z-index: 1; }
+.hero-sub { font-size: 12px; color: rgba(255,255,255,.5); position: relative; z-index: 1; }
+
+.staff-id-input {
+  font-size: 28px; font-weight: 900; text-align: center; letter-spacing: 6px;
+  padding: 18px; border-radius: 14px; border: 2.5px solid var(--border);
+  background: #fff; color: var(--tp); width: 100%; font-family: 'SF Mono', monospace;
+  transition: border .18s; outline: none;
+}
+.staff-id-input:focus { border-color: var(--accent); }
+
+.geo-status {
+  display: flex; align-items: center; gap: 10px; padding: 12px 14px;
+  border-radius: 10px; font-size: 12px; margin-bottom: 16px;
+}
+.geo-ok    { background: var(--greenL); color: var(--green);  border: 1px solid #A7F3D0; }
+.geo-fail  { background: var(--redL);   color: var(--red);    border: 1px solid #FECDD3; }
+.geo-wait  { background: var(--amberL); color: var(--amber);  border: 1px solid #FDE68A; }
+.geo-off   { background: var(--surface);color: var(--ts);     border: 1px solid var(--border); }
+
+.geo-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.dot-green  { background: var(--green); box-shadow: 0 0 0 3px rgba(5,150,105,.2); }
+.dot-red    { background: var(--red);   box-shadow: 0 0 0 3px rgba(229,55,74,.2); }
+.dot-amber  { background: var(--amber); animation: pulse 1.5s infinite; }
+.dot-grey   { background: var(--tm); }
+@keyframes pulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(217,119,6,.4); }
+  50%      { box-shadow: 0 0 0 6px rgba(217,119,6,0); }
+}
+
+.map-preview {
+  width: 100%; height: 160px; border-radius: 12px;
+  background: linear-gradient(135deg, #e8f0fe, #dde3f5);
+  border: 1.5px solid var(--border); display: flex; align-items: center;
+  justify-content: center; position: relative; overflow: hidden;
+  margin-bottom: 14px;
+}
+.map-grid {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(79,110,247,.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(79,110,247,.06) 1px, transparent 1px);
+  background-size: 30px 30px;
+}
+.map-pin { position: absolute; transform: translate(-50%,-100%); cursor: pointer; }
+.map-pin-dot {
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--accent); border: 3px solid #fff;
+  box-shadow: 0 2px 8px rgba(79,110,247,.5);
+}
+.map-pin-tail {
+  width: 2px; height: 10px; background: var(--accent);
+  margin: 0 auto;
+}
+.fence-ring {
+  position: absolute; border-radius: 50%;
+  border: 2px dashed rgba(79,110,247,.4);
+  background: rgba(79,110,247,.06);
+  transform: translate(-50%,-50%);
+}
+.map-label {
+  position: absolute; bottom: 8px; left: 8px;
+  background: rgba(13,18,38,.8); color: #fff;
+  font-size: 10px; padding: 3px 8px; border-radius: 6px; font-weight: 600;
+}
+
+.success-anim {
+  text-align: center; padding: 32px 20px;
+}
+.success-circle {
+  width: 80px; height: 80px; border-radius: 50%;
+  background: var(--greenL); border: 3px solid var(--green);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 36px; margin: 0 auto 16px;
+  animation: popIn .4s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes popIn {
+  from { transform: scale(0); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+.fail-circle {
+  width: 80px; height: 80px; border-radius: 50%;
+  background: var(--redL); border: 3px solid var(--red);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 36px; margin: 0 auto 16px;
+  animation: popIn .4s cubic-bezier(.34,1.56,.64,1);
+}
+
+.numpad {
+  display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin: 14px 0;
+}
+.num-key {
+  padding: 16px 0; text-align: center; background: var(--card);
+  border: 1.5px solid var(--border); border-radius: 12px;
+  font-size: 18px; font-weight: 700; cursor: pointer;
+  transition: all .12s; user-select: none;
+}
+.num-key:hover  { background: var(--accentL); border-color: var(--accent); }
+.num-key:active { transform: scale(.94); }
+.num-key.del    { color: var(--red); font-size: 20px; }
+
+.record-row {
+  display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+  border-radius: 10px; border: 1px solid var(--border);
+  margin-bottom: 8px; background: var(--card);
+}
+.record-icon {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 17px; flex-shrink: 0;
+}
+.ri-in  { background: var(--greenL); }
+.ri-out { background: var(--redL); }
+.record-info { flex: 1; min-width: 0; }
+.record-name { font-weight: 700; font-size: 13px; color: var(--tp); }
+.record-meta { font-size: 11px; color: var(--ts); margin-top: 2px; }
+.record-time { font-weight: 800; font-size: 15px; color: var(--tp); font-family: monospace; }
+
+/* ── Admin specific ── */
+.stats-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 20px; }
+@media(max-width:640px){ .stats-grid { grid-template-columns: repeat(2,1fr); } }
+.stat-card {
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: 12px; padding: 14px 16px; box-shadow: var(--shadow);
+}
+.stat-val { font-size: 26px; font-weight: 900; color: var(--tp); }
+.stat-lbl { font-size: 11px; color: var(--ts); margin-top: 3px; }
+
+/* ── Upload ── */
+.drop-zone {
+  border: 2.5px dashed var(--border); border-radius: 12px; padding: 36px 20px;
+  text-align: center; cursor: pointer; transition: all .18s;
+  background: var(--bg);
+}
+.drop-zone:hover, .drop-zone.drag { border-color: var(--accent); background: var(--accentL); }
+.drop-zone input { display: none; }
+
+.chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: var(--accentL); color: var(--accent);
+  border-radius: 20px; padding: 3px 10px; font-size: 11px; font-weight: 700;
+}
+
+/* ── Admin Login Screen ── */
+.admin-login-screen {
+  position: fixed; inset: 0; z-index: 600;
+  background: linear-gradient(135deg, #0D1226 0%, #1a2040 50%, #0f2350 100%);
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.admin-login-card {
+  background: rgba(255,255,255,.06); border: 1.5px solid rgba(255,255,255,.12);
+  border-radius: 20px; padding: 36px 32px; max-width: 420px; width: 100%;
+  backdrop-filter: blur(10px);
+}
+.admin-login-logo {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 28px;
+}
+.admin-login-logo .logo-box {
+  width: 48px; height: 48px; background: var(--accent);
+  border-radius: 12px; display: flex; align-items: center; justify-content: center;
+  font-weight: 900; color: #fff; font-size: 18px;
+}
+.admin-login-logo .logo-text .t1 { font-size: 17px; font-weight: 900; color: #fff; }
+.admin-login-logo .logo-text .t2 { font-size: 11px; color: rgba(255,255,255,.4); margin-top: 2px; }
+.admin-login-title { font-size: 22px; font-weight: 900; color: #fff; margin-bottom: 6px; }
+.admin-login-sub   { font-size: 12px; color: rgba(255,255,255,.45); margin-bottom: 24px; line-height: 1.6; }
+.admin-input {
+  width: 100%; padding: 13px 16px; border-radius: 12px; font-size: 14px;
+  background: rgba(255,255,255,.08); border: 1.5px solid rgba(255,255,255,.15);
+  color: #fff; font-family: inherit; outline: none; margin-bottom: 12px;
+  transition: border .18s;
+}
+.admin-input:focus { border-color: var(--accent); background: rgba(255,255,255,.12); }
+.admin-input::placeholder { color: rgba(255,255,255,.25); }
+.admin-role-pills {
+  display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap;
+}
+.role-pill {
+  padding: 7px 14px; border-radius: 20px; font-size: 12px; font-weight: 700;
+  cursor: pointer; border: 1.5px solid rgba(255,255,255,.15);
+  color: rgba(255,255,255,.5); background: rgba(255,255,255,.05);
+  transition: all .18s;
+}
+.role-pill.active {
+  background: var(--accent); color: #fff; border-color: var(--accent);
+}
+.admin-err {
+  background: rgba(229,55,74,.15); border: 1px solid rgba(229,55,74,.3);
+  border-radius: 8px; padding: 10px 14px; font-size: 12px; color: #FCA5A5;
+  margin-bottom: 14px; display: none;
+}
+.admin-session-bar {
+  background: rgba(79,110,247,.15); border-bottom: 1px solid rgba(79,110,247,.2);
+  padding: 8px 20px; display: none; align-items: center; gap: 12px;
+  font-size: 12px; color: rgba(255,255,255,.7);
+}
+.admin-session-bar.visible { display: flex; }
+.session-role-badge {
+  background: var(--accent); color: #fff; border-radius: 6px;
+  padding: 2px 8px; font-size: 11px; font-weight: 700;
+}
+.co-switcher {
+  display: flex; align-items: center; gap: 8px; margin-left: auto;
+}
+.co-switcher select {
+  background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15);
+  color: #fff; border-radius: 8px; padding: 4px 10px; font-size: 12px;
+  font-family: inherit; cursor: pointer; outline: none;
+}
+.co-switcher select option { background: #1a2040; color: #fff; }
+
+/* ── First-time Setup Wizard ── */
+.setup-wizard {
+  position: fixed; inset: 0; z-index: 550;
+  background: linear-gradient(135deg, #0D1226 0%, #1a2040 50%, #0f2350 100%);
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+  overflow-y: auto;
+}
+.wizard-card {
+  background: rgba(255,255,255,.06); border: 1.5px solid rgba(255,255,255,.12);
+  border-radius: 20px; padding: 32px 28px; max-width: 520px; width: 100%;
+}
+.wizard-step-bar {
+  display: flex; gap: 4px; margin-bottom: 28px;
+}
+.wizard-step {
+  flex: 1; height: 4px; border-radius: 2px; background: rgba(255,255,255,.15);
+  transition: background .3s;
+}
+.wizard-step.done { background: var(--green); }
+.wizard-step.active { background: var(--accent); }
+.wizard-title { font-size: 20px; font-weight: 900; color: #fff; margin-bottom: 6px; }
+.wizard-sub   { font-size: 12px; color: rgba(255,255,255,.45); margin-bottom: 22px; line-height: 1.7; }
+
+/* ── Device Registration Screen ── */
+.device-reg-screen {
+  position: fixed; inset: 0; z-index: 500;
+  background: linear-gradient(135deg, #0D1226 0%, #1a2040 60%, #0f2350 100%);
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.device-reg-card {
+  background: rgba(255,255,255,.05); border: 1.5px solid rgba(255,255,255,.12);
+  border-radius: 20px; padding: 32px 28px; max-width: 400px; width: 100%;
+  text-align: center; backdrop-filter: blur(10px);
+}
+.device-reg-icon { font-size: 52px; margin-bottom: 16px; }
+.device-reg-title { font-size: 22px; font-weight: 900; color: #fff; margin-bottom: 8px; }
+.device-reg-sub   { font-size: 12px; color: rgba(255,255,255,.5); margin-bottom: 28px; line-height: 1.7; }
+.device-reg-input {
+  width: 100%; padding: 14px 16px; border-radius: 12px; font-size: 22px;
+  font-weight: 900; text-align: center; letter-spacing: 4px;
+  background: rgba(255,255,255,.08); border: 2px solid rgba(255,255,255,.2);
+  color: #fff; font-family: 'SF Mono', monospace; margin-bottom: 14px;
+  outline: none; transition: border .18s;
+}
+.device-reg-input:focus { border-color: var(--accent); background: rgba(255,255,255,.12); }
+.device-reg-input::placeholder { color: rgba(255,255,255,.25); letter-spacing: 2px; }
+.device-badge {
+  background: rgba(79,110,247,.15); border: 1px solid rgba(79,110,247,.3);
+  border-radius: 10px; padding: 10px 14px; margin-bottom: 20px;
+  font-size: 11px; color: rgba(255,255,255,.6); text-align: left;
+}
+.device-badge-id { font-family: monospace; font-size: 10px; color: rgba(255,255,255,.35); margin-top: 4px; word-break: break-all; }
+.bound-banner {
+  background: var(--greenL); border: 1.5px solid #A7F3D0;
+  border-radius: 12px; padding: 12px 14px; margin-bottom: 16px;
+  display: flex; align-items: center; gap: 10px;
+}
+.bound-banner-icon { font-size: 24px; flex-shrink: 0; }
+.bound-banner-text { font-size: 12px; line-height: 1.6; }
+.bound-banner-name { font-weight: 800; font-size: 14px; color: var(--green); }
+
+/* ── Toast ── */
+.toast-wrap {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  z-index: 9999; pointer-events: none; display: flex; flex-direction: column; gap: 8px;
+}
+.toast {
+  background: #0D1226; color: #fff; padding: 11px 20px; border-radius: 12px;
+  font-size: 13px; font-weight: 600; box-shadow: 0 4px 20px rgba(0,0,0,.3);
+  animation: toastIn .3s ease; white-space: nowrap;
+}
+.toast.ok  { background: var(--green); }
+.toast.err { background: var(--red); }
+@keyframes toastIn {
+  from { opacity:0; transform: translateY(12px); }
+  to   { opacity:1; transform: translateY(0); }
+}
+
+/* ── Tabs ── */
+.tabs { display: flex; gap: 4px; margin-bottom: 18px; background: var(--surface); border-radius: 12px; padding: 4px; }
+.tab {
+  flex: 1; text-align: center; padding: 8px; border-radius: 9px;
+  font-size: 12px; font-weight: 700; cursor: pointer; color: var(--ts);
+  transition: all .18s; border: none; background: transparent; font-family: inherit;
+}
+.tab.active { background: var(--card); color: var(--accent); box-shadow: var(--shadow); }
+
+.section-head {
+  font-size: 18px; font-weight: 900; color: var(--tp);
+  margin-bottom: 4px;
+}
+.section-sub { font-size: 12px; color: var(--ts); margin-bottom: 20px; }
+hr.div { border: none; border-top: 1.5px solid var(--border); margin: 18px 0; }
+
+.geo-ring-label {
+  font-size: 10px; color: var(--ts); margin-top: 4px; text-align: center;
+}
+
+/* ── Company selector header badge ── */
+.co-badge {
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(255,255,255,.08); border-radius: 10px; padding: 6px 12px;
+}
+.co-badge-name { font-size: 12px; color: rgba(255,255,255,.8); font-weight: 700; }
+.co-badge-reg  { font-size: 10px; color: rgba(255,255,255,.4); }
+</style>
+
+<!-- ══ PWA — Install on Home Screen ══ -->
+<!-- Works on Android (Chrome), iPhone (Safari), Huawei (browser) -->
+<link rel="manifest" id="pwaManifest">
+<meta name="theme-color" content="#0D1226">
+<meta name="background-color" content="#0D1226">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="HRCloud Sign-In">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="application-name" content="HRCloud Sign-In">
+<!-- Apple touch icons (iOS/iPadOS) -->
+<link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgcng9IjQwIiBmaWxsPSIjMEQxMjI2Ii8+PHJlY3QgeD0iMjAiIHk9IjIwIiB3aWR0aD0iMTUyIiBoZWlnaHQ9IjE1MiIgcng9IjI0IiBmaWxsPSIjNEY2RUY3Ii8+PHRleHQgeD0iOTYiIHk9IjExMCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjcyIiBmb250LXdlaWdodD0iOTAwIiBmaWxsPSIjZmZmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5IUjwvdGV4dD48L3N2Zz4=">
+</head>
+<body>
+<div class="app" id="app">
+
+<!-- TOP BAR -->
+<div class="top-bar">
+  <div class="brand">
+    <div class="brand-icon">HR</div>
+    <div class="brand-text">
+      <div class="b1">HRCloud Sign-In</div>
+      <div class="b2">Staff Attendance · Geofence Verified</div>
+    </div>
+  </div>
+  <div class="top-right">
+    <button id="installAppBtn" onclick="triggerInstall && triggerInstall()" title="Install as app"
+      style="display:none;background:rgba(79,110,247,.25);border:1px solid rgba(79,110,247,.4);
+             color:#fff;border-radius:9px;padding:7px 13px;font-size:12px;font-weight:700;
+             cursor:pointer;font-family:inherit;white-space:nowrap">
+      📲 Install App
+    </button>
+    <div class="co-badge" id="coBadge" style="display:none">
+      <span style="font-size:16px">🏢</span>
+      <div>
+        <div class="co-badge-name" id="coName">—</div>
+        <div class="co-badge-reg" id="coReg">—</div>
+      </div>
+    </div>
+    <div class="page-tabs">
+      <button class="page-tab active" id="tabBtnSignin" onclick="showPage('signin')">Sign-In</button>
+      <button class="page-tab" id="tabBtnAdmin" onclick="requireAdminThen('admin')">🔐 Admin</button>
+      <button class="page-tab" id="tabBtnSetup" onclick="requireAdminThen('setup')">⚙️ Setup</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ADMIN LOGIN SCREEN ══════════════════════════════════════════ -->
+<div class="admin-login-screen" id="adminLoginScreen" style="display:none">
+  <div class="admin-login-card">
+    <div class="admin-login-logo">
+      <div class="logo-box">HR</div>
+      <div class="logo-text">
+        <div class="t1">HRCloud Sign-In</div>
+        <div class="t2">Administration Portal</div>
+      </div>
+    </div>
+    <div class="admin-login-title">Admin Sign In</div>
+    <div class="admin-login-sub">
+      Sign in to manage companies, staff, geofence zones, device bindings and attendance records.
+    </div>
+
+    <!-- Role selector -->
+    <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.4);letter-spacing:.5px;text-transform:uppercase;margin-bottom:10px">Select Role</div>
+    <div class="admin-role-pills">
+      <div class="role-pill active" id="roleTabSA" onclick="selectAdminRole('superadmin')">🏢 Company Admin</div>
+      <div class="role-pill" id="roleTabPA" onclick="selectAdminRole('platform')">⚙️ Platform Admin</div>
+    </div>
+
+    <!-- Company selector (for superadmin role) -->
+    <div id="loginCoField" style="margin-bottom:12px">
+      <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.4);letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px">Company</div>
+      <select class="admin-input" id="loginCoSelect" style="margin-bottom:0;cursor:pointer">
+        <option value="">— Select company —</option>
+      </select>
+    </div>
+
+    <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.4);letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px">Admin ID</div>
+    <input type="text" class="admin-input" id="adminLoginId" placeholder="SA001 or PA001"
+      autocomplete="off" autocapitalize="off"
+      onkeydown="if(event.key==='Enter')document.getElementById('adminLoginPw').focus()">
+
+    <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.4);letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px">Password</div>
+    <input type="password" class="admin-input" id="adminLoginPw" placeholder="Your admin password"
+      onkeydown="if(event.key==='Enter')doAdminLogin()">
+
+    <div class="admin-err" id="adminLoginErr"></div>
+
+    <button class="btn btn-primary btn-full" onclick="doAdminLogin()"
+      style="font-size:15px;padding:14px;margin-bottom:16px">
+      🔐 Sign In as Admin
+    </button>
+
+    <div style="text-align:center;font-size:11px;color:rgba(255,255,255,.25)">
+      Staff: use the Sign-In tab to clock in/out
+    </div>
+
+    <!-- First time hint -->
+    <div id="firstTimeHint" style="display:none;margin-top:16px;padding:12px 14px;background:rgba(79,110,247,.15);border-radius:10px;border:1px solid rgba(79,110,247,.3)">
+      <div style="font-weight:700;color:rgba(255,255,255,.8);font-size:12px;margin-bottom:4px">👋 First time setup?</div>
+      <div style="font-size:11px;color:rgba(255,255,255,.45);line-height:1.7">
+        No companies are set up yet.<br>
+        Use Platform Admin credentials or click below to run the setup wizard.
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="showSetupWizard()"
+        style="margin-top:10px;color:#fff;border-color:rgba(255,255,255,.2);background:rgba(255,255,255,.08)">
+        🧙 Run Setup Wizard
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ADMIN SESSION BAR (shown when logged in as admin) ══════════════ -->
+<div class="admin-session-bar" id="adminSessionBar">
+  <span style="font-size:16px">🔐</span>
+  <span id="sessionRoleName">—</span>
+  <span class="session-role-badge" id="sessionRoleBadge">—</span>
+  <div class="co-switcher" id="coSwitcherWrap">
+    <span style="color:rgba(255,255,255,.4)">Company:</span>
+    <select id="adminCoSwitcher" onchange="switchActiveCompany(this.value)"></select>
+  </div>
+  <button onclick="doAdminLogout()"
+    style="margin-left:auto;background:rgba(229,55,74,.2);border:1px solid rgba(229,55,74,.3);
+           color:#FCA5A5;border-radius:8px;padding:5px 12px;font-size:11px;
+           font-weight:700;cursor:pointer;font-family:inherit">
+    🔓 Sign Out
+  </button>
+</div>
+
+<!-- ══ FIRST-TIME SETUP WIZARD ════════════════════════════════════════ -->
+<div class="setup-wizard" id="setupWizard" style="display:none">
+  <div class="wizard-card">
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="font-size:40px;margin-bottom:8px">🧙</div>
+      <div class="wizard-title">Welcome to HRCloud Sign-In</div>
+      <div class="wizard-sub">Let's set up your first company in 3 quick steps.</div>
+    </div>
+    <div class="wizard-step-bar">
+      <div class="wizard-step active" id="wStep1"></div>
+      <div class="wizard-step" id="wStep2"></div>
+      <div class="wizard-step" id="wStep3"></div>
+    </div>
+
+    <!-- Step 1: Company Info -->
+    <div id="wizardStep1">
+      <div class="wizard-title" style="font-size:16px">Step 1 — Company Details</div>
+      <div class="wizard-sub">Enter your company's registration information.</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div><div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px">Company Name *</div>
+          <input class="admin-input" id="wCoName" placeholder="TechCorp Sdn. Bhd." style="margin-bottom:0"></div>
+        <div><div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px">SSM Reg. No. *</div>
+          <input class="admin-input" id="wCoSSM" placeholder="202001012345" style="margin-bottom:0"></div>
+        <div><div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px">LHDN / Tax No.</div>
+          <input class="admin-input" id="wCoLHDN" placeholder="C 1234567890" style="margin-bottom:0"></div>
+        <div><div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px">Phone</div>
+          <input class="admin-input" id="wCoPhone" placeholder="03-22345678" style="margin-bottom:0"></div>
+        <div><div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px">Email</div>
+          <input class="admin-input" id="wCoEmail" placeholder="hr@company.com.my" style="margin-bottom:0"></div>
+        <div><div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px">State</div>
+          <select class="admin-input" id="wCoState" style="margin-bottom:0;cursor:pointer">
+            <option>W.P. Kuala Lumpur</option><option>Selangor</option><option>Johor</option>
+            <option>Pulau Pinang</option><option>Perak</option><option>Sabah</option>
+            <option>Sarawak</option><option>Negeri Sembilan</option><option>Melaka</option>
+            <option>Kedah</option><option>Kelantan</option><option>Pahang</option>
+            <option>Terengganu</option><option>Perlis</option>
+          </select></div>
+      </div>
+      <div style="margin-top:12px"><div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px">Address</div>
+        <input class="admin-input" id="wCoAddr" placeholder="Level 18, Menara ABC, Jalan Ampang" style="margin-bottom:0"></div>
+      <div style="display:flex;justify-content:flex-end;margin-top:20px">
+        <button class="btn btn-primary" onclick="wizardNext(2)">Next: Admin Account →</button>
+      </div>
+    </div>
+
+    <!-- Step 2: Admin Credentials -->
+    <div id="wizardStep2" style="display:none">
+      <div class="wizard-title" style="font-size:16px">Step 2 — Admin Account</div>
+      <div class="wizard-sub">Create the Super Admin login for this company. You'll use this to sign into the Admin and Setup tabs.</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div><div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px">Admin ID *</div>
+          <input class="admin-input" id="wAdminId" placeholder="SA001" autocapitalize="off" style="margin-bottom:0"></div>
+        <div><div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px">Password * (min 8 chars)</div>
+          <input class="admin-input" type="password" id="wAdminPw" placeholder="Min 8 characters" style="margin-bottom:0"></div>
+        <div style="grid-column:span 2"><div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px">Confirm Password *</div>
+          <input class="admin-input" type="password" id="wAdminPw2" placeholder="Repeat password" style="margin-bottom:0"></div>
+      </div>
+      <div style="margin-top:12px;padding:10px 14px;background:rgba(217,119,6,.12);border:1px solid rgba(217,119,6,.25);border-radius:8px;font-size:11px;color:rgba(253,186,116,.9)">
+        ⚠ Save these credentials somewhere safe — they protect your admin panel. There is no password reset without database access.
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:20px">
+        <button class="btn btn-ghost" onclick="wizardNext(1)" style="color:rgba(255,255,255,.5)">← Back</button>
+        <button class="btn btn-primary" onclick="wizardNext(3)">Next: Geofence →</button>
+      </div>
+    </div>
+
+    <!-- Step 3: Geofence -->
+    <div id="wizardStep3" style="display:none">
+      <div class="wizard-title" style="font-size:16px">Step 3 — Office Location</div>
+      <div class="wizard-sub">Set your office geofence so staff can only clock in when they're physically at the office. You can skip this and set it up later in Admin → Geofence Config.</div>
+      <div><div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px">Zone Name</div>
+        <input class="admin-input" id="wGeoName" placeholder="Head Office" style="margin-bottom:12px"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+        <div><div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px">Latitude</div>
+          <input class="admin-input" id="wGeoLat" placeholder="3.1390" type="number" step="0.0001" style="margin-bottom:0"></div>
+        <div><div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px">Longitude</div>
+          <input class="admin-input" id="wGeoLng" placeholder="101.6869" type="number" step="0.0001" style="margin-bottom:0"></div>
+        <div><div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px">Radius (m)</div>
+          <input class="admin-input" id="wGeoRadius" value="100" type="number" style="margin-bottom:0"></div>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="wizardUseLocation()"
+        style="margin-top:10px;color:rgba(255,255,255,.6);border-color:rgba(255,255,255,.15)">
+        📍 Use My Current GPS Location
+      </button>
+      <div style="margin-top:12px;padding:10px 14px;background:rgba(79,110,247,.1);border:1px solid rgba(79,110,247,.2);border-radius:8px;font-size:11px;color:rgba(147,197,253,.8)">
+        💡 Tip: Set radius 80–150m for an office building. You can always adjust this later.
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:20px">
+        <button class="btn btn-ghost" onclick="wizardNext(2)" style="color:rgba(255,255,255,.5)">← Back</button>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-ghost" onclick="wizardFinish(false)"
+            style="color:rgba(255,255,255,.4);border-color:rgba(255,255,255,.1)">Skip Geofence</button>
+          <button class="btn btn-green" onclick="wizardFinish(true)">✓ Finish Setup</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast-wrap" id="toastWrap"></div>
+
+<!-- ════════════════════════════════════════════════════ PAGE: SIGN-IN -->
+<div class="content" id="pageSignin">
+
+  <!-- Device Registration Screen (shown on first launch or if unbound) -->
+  <div class="device-reg-screen" id="deviceRegScreen" style="display:none">
+    <div class="device-reg-card">
+      <div class="device-reg-icon">📱</div>
+      <div class="device-reg-title">Register This Device</div>
+      <div class="device-reg-sub">
+        This is a first-time setup. Enter your Staff ID to bind this device to your account.<br><br>
+        After registration, <strong>only you</strong> can use this phone to clock in or out.<br>
+        Contact your admin if you need to change or reset your device.
+      </div>
+      <div class="device-badge">
+        <div style="color:rgba(255,255,255,.5);font-size:10px;margin-bottom:2px">Device ID (unique to this phone)</div>
+        <div class="device-badge-id" id="deviceIdDisplay">—</div>
+      </div>
+      <input type="text" class="device-reg-input" id="deviceRegInput"
+        placeholder="E001" maxlength="10" autocomplete="off" autocapitalize="characters"
+        oninput="this.value=this.value.toUpperCase()"
+        onkeydown="if(event.key==='Enter') confirmDeviceReg()">
+      <button class="btn btn-primary btn-full" onclick="confirmDeviceReg()" style="margin-bottom:10px;font-size:15px;padding:14px">
+        🔐 Register My Device
+      </button>
+      <div style="font-size:11px;color:rgba(255,255,255,.3)">
+        Your device ID will be stored on this phone only. The server records which staff ID belongs to this device.
+      </div>
+    </div>
+  </div>
+
+  <!-- Hero -->
+  <div class="signin-hero">
+    <div class="hero-title" id="heroTitle">Staff Sign-In</div>
+    <div class="hero-sub" id="heroDate">Loading…</div>
+  </div>
+
+  <!-- Geofence Status -->
+  <div class="geo-status geo-wait" id="geoStatus">
+    <div class="geo-dot dot-amber"></div>
+    <div>
+      <div style="font-weight:700">Requesting location…</div>
+      <div style="font-size:10px;margin-top:1px;opacity:.75">Please allow location access for geofence verification</div>
+    </div>
+  </div>
+
+  <!-- Map Preview -->
+  <div class="map-preview" id="mapPreview">
+    <div class="map-grid"></div>
+    <div class="map-label" id="mapLabel">📍 Waiting for location…</div>
+    <div id="mapFence"></div>
+    <div id="mapPin"></div>
+  </div>
+
+  <!-- Result screen (hidden initially) -->
+  <div id="resultScreen" style="display:none"></div>
+
+  <!-- Sign-in form -->
+  <div id="signinForm">
+    <div class="card">
+      <!-- Bound device banner: shown when device is registered -->
+      <div class="bound-banner" id="boundBanner" style="display:none">
+        <div class="bound-banner-icon">🔐</div>
+        <div class="bound-banner-text">
+          <div class="bound-banner-name" id="boundStaffName">Ahmad Farid</div>
+          <div style="color:var(--ts)">This device is registered to <strong id="boundEmpId">E001</strong> only.<br>
+          Only your Staff ID will be accepted on this phone.</div>
+        </div>
+      </div>
+      <div class="card-title" id="signinCardTitle">🪪 Enter Staff ID</div>
+      <div class="card-sub" id="signinCardSub">Type or scan your employee number to clock in or out</div>
+
+      <div class="field">
+        <input type="text" class="staff-id-input" id="staffIdInput"
+          placeholder="E001"
+          autocomplete="off" autocorrect="off" autocapitalize="characters"
+          maxlength="10" oninput="onStaffIdInput(this.value)">
+      </div>
+
+      <!-- Staff preview card -->
+      <div id="staffPreview" style="display:none; background:var(--accentL); border-radius:12px; padding:14px; margin-bottom:14px;">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div id="staffAvatar" style="width:48px;height:48px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;flex-shrink:0"></div>
+          <div>
+            <div id="staffName" style="font-weight:800;font-size:15px;color:var(--tp)"></div>
+            <div id="staffMeta" style="font-size:11px;color:var(--ts);margin-top:2px"></div>
+            <div id="staffLastAction" style="font-size:11px;margin-top:4px"></div>
+          </div>
+          <div id="staffStatus" style="margin-left:auto"></div>
+        </div>
+      </div>
+
+      <!-- Numpad -->
+      <div class="numpad" id="numpad">
+        <div class="num-key" onclick="padKey('1')">1</div>
+        <div class="num-key" onclick="padKey('2')">2</div>
+        <div class="num-key" onclick="padKey('3')">3</div>
+        <div class="num-key" onclick="padKey('4')">4</div>
+        <div class="num-key" onclick="padKey('5')">5</div>
+        <div class="num-key" onclick="padKey('6')">6</div>
+        <div class="num-key" onclick="padKey('7')">7</div>
+        <div class="num-key" onclick="padKey('8')">8</div>
+        <div class="num-key" onclick="padKey('9')">9</div>
+        <div class="num-key" onclick="padKey('E')" style="font-size:13px">E—</div>
+        <div class="num-key" onclick="padKey('0')">0</div>
+        <div class="num-key del" onclick="padKey('DEL')">⌫</div>
+      </div>
+
+      <button class="btn btn-green btn-full" id="signinBtn" onclick="doSignIn()" disabled>
+        <span>🕐</span> <span id="signinBtnLabel">Clock In / Out</span>
+      </button>
+    </div>
+
+    <!-- Today's log -->
+    <div class="card">
+      <div class="card-title">📋 Today's Sign-Ins</div>
+      <div class="card-sub" id="todayCount">No records yet</div>
+      <div id="todayLog"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════ PAGE: ADMIN -->
+<div class="content" id="pageAdmin" style="display:none">
+
+  <div class="section-head">📊 Attendance Dashboard</div>
+  <div class="section-sub" id="adminCompanyLabel">All companies · Today</div>
+
+  <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+    <select class="select" style="max-width:220px" id="adminCoFilter" onchange="renderAdminDash()">
+      <option value="ALL">All Companies</option>
+    </select>
+    <input type="date" class="input" style="max-width:160px" id="adminDate" onchange="renderAdminDash()">
+    <button class="btn btn-ghost btn-sm" onclick="exportAttendanceCSV()">⬇ Export CSV</button>
+    <button class="btn btn-ghost btn-sm" onclick="exportHRCloudCSV()">🔗 Export for HRCloud</button>
+  </div>
+
+  <div class="stats-grid" id="adminStats"></div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="setAdminTab('log')" id="tabLog">📋 Attendance Log</button>
+    <button class="tab" onclick="setAdminTab('staff')" id="tabStaff">👥 Staff Register</button>
+    <button class="tab" onclick="setAdminTab('geo')" id="tabGeo">📍 Geofence Config</button>
+    <button class="tab" onclick="setAdminTab('devices')" id="tabDevices">📱 Device Binding</button>
+  </div>
+
+  <div id="adminTabLog">
+    <div class="card" style="padding:0;overflow:hidden">
+      <div style="padding:16px 20px;border-bottom:1.5px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+        <div class="card-title" style="margin:0">Sign-In / Out Records</div>
+        <button class="btn btn-red btn-sm" onclick="clearTodayLog()">🗑 Clear Today</button>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="tbl" id="adminLogTbl">
+          <thead><tr>
+            <th>Time</th><th>Staff ID</th><th>Name</th><th>Department</th>
+            <th>Action</th><th>Location</th><th>Geofence</th><th>Company</th>
+          </tr></thead>
+          <tbody id="adminLogBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="adminTabStaff" style="display:none">
+    <div class="card" style="padding:0;overflow:hidden">
+      <div style="padding:16px 20px;border-bottom:1.5px solid var(--border)">
+        <div class="card-title" style="margin:0">Staff Register</div>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="tbl">
+          <thead><tr>
+            <th>Staff ID</th><th>Name</th><th>Dept</th><th>Grade</th>
+            <th>Status Today</th><th>In Time</th><th>Out Time</th><th>Company</th>
+          </tr></thead>
+          <tbody id="adminStaffBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="adminTabGeo" style="display:none">
+    <div class="card">
+      <div class="card-title">📍 Geofence Configuration</div>
+      <div class="card-sub">Set location and radius for each company or site</div>
+      <div id="geoConfigList"></div>
+      <div style="background:var(--accentL);border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:12px">
+        <div style="font-weight:700;color:var(--accent);margin-bottom:6px">📡 Location Source Mode</div>
+        <div style="color:var(--ts);margin-bottom:10px;line-height:1.7">
+          The app uses all available sources automatically:
+          <strong>GPS</strong> (3–15m, outdoors) → <strong>WiFi</strong> (10–40m, indoors) → <strong>Cell/Network</strong> (100–2000m, fallback).<br>
+          For office geofencing, set radius ≥ 50m to reliably cover WiFi positioning.
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-weight:600">
+            <input type="checkbox" id="gpsHighAccuracy" onchange="toggleHighAccuracy(this.checked)">
+            Force GPS satellite only (outdoor/site use — drains battery, fails indoors)
+          </label>
+        </div>
+        <div style="margin-top:8px;font-size:11px;color:var(--ts)">
+          💡 Recommended geofence radius by location source:
+          GPS = 30m · WiFi = 80m · Office building = 100–150m · Campus/site = 200–500m
+        </div>
+      </div>
+      <hr class="div">
+      <div class="card-title" style="font-size:13px">➕ Add Geofence Zone</div>
+      <div class="input-row" style="margin-top:12px">
+        <div class="field">
+          <label class="label">Zone Name</label>
+          <input class="input" id="geoName" placeholder="Head Office">
+        </div>
+        <div class="field">
+          <label class="label">Company</label>
+          <select class="select" id="geoCoSelect"></select>
+        </div>
+      </div>
+      <div class="input-row">
+        <div class="field">
+          <label class="label">Latitude</label>
+          <input class="input" id="geoLat" placeholder="3.1390" type="number" step="0.0001">
+        </div>
+        <div class="field">
+          <label class="label">Longitude</label>
+          <input class="input" id="geoLng" placeholder="101.6869" type="number" step="0.0001">
+        </div>
+      </div>
+      <div class="field">
+        <label class="label">Radius (metres)</label>
+        <input class="input" id="geoRadius" value="100" type="number" step="10">
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="addGeoZone()">📍 Add Zone</button>
+        <button class="btn btn-ghost" onclick="useCurrentLocation()">📌 Use My Current Location</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+  <div id="adminTabDevices" style="display:none">
+    <div class="card">
+      <div class="card-title">📱 Device Binding Management</div>
+      <div class="card-sub">Each staff member registers their phone once. Only their device can punch in/out for them. One phone = one staff member.</div>
+      <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+        <button class="btn btn-ghost btn-sm" onclick="renderDeviceList()">🔄 Refresh</button>
+        <button class="btn btn-red btn-sm" onclick="resetAllDevices()">⚠ Reset All Bindings</button>
+        <button class="btn btn-ghost btn-sm" onclick="exportDeviceCSV()">⬇ Export CSV</button>
+      </div>
+      <div id="deviceListPanel"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">🔧 Admin Override — Bind / Unbind Device</div>
+      <div class="card-sub">Manually link a Staff ID to a specific device token, or unlink a lost/stolen phone.</div>
+      <div class="input-row">
+        <div class="field">
+          <label class="label">Staff Member</label>
+          <select class="select" id="adminBindStaff">
+            <option value="">— Select staff —</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="label">Device Token (from staff's phone)</label>
+          <input class="input" id="adminBindToken" placeholder="DT-xxxxxxxxxxxxxxxxxxxx">
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="adminBindDevice()">🔐 Bind Device to Staff</button>
+        <button class="btn btn-red" onclick="adminUnbindStaff()">🔓 Unbind This Staff's Device</button>
+      </div>
+    </div>
+  </div>
+
+<!-- ════════════════════════════════════════════════════ PAGE: SETUP -->
+<div class="content" id="pageSetup" style="display:none">
+
+  <div class="section-head">⚙️ Setup & Data Management</div>
+  <div class="section-sub">Upload company and staff data, configure licensing, export for HRCloud integration</div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="setSetupTab('company','this')" id="tabSCo">🏢 Companies</button>
+    <button class="tab" onclick="setSetupTab('staff','this')" id="tabSSt">👥 Staff</button>
+    <button class="tab" onclick="setSetupTab('license','this')" id="tabSLic">🔑 Licensing</button>
+    <button class="tab" onclick="setSetupTab('export','this')" id="tabSExp">🔗 HRCloud Export</button>
+  </div>
+
+  <!-- Companies tab -->
+  <div id="setupTabCompany">
+    <div class="card">
+      <div class="card-title">📥 Upload Company CSV</div>
+      <div class="card-sub">Upload a CSV file to add or update company records</div>
+      <div class="drop-zone" id="coDropZone" onclick="document.getElementById('coFileInput').click()"
+        ondragover="event.preventDefault();this.classList.add('drag')"
+        ondragleave="this.classList.remove('drag')"
+        ondrop="handleDrop(event,'company')">
+        <input type="file" id="coFileInput" accept=".csv" onchange="handleFile(this,'company')">
+        <div style="font-size:32px;margin-bottom:8px">📄</div>
+        <div style="font-weight:700;color:var(--tp)">Drop CSV file here or click to browse</div>
+        <div style="font-size:11px;color:var(--ts);margin-top:4px">company_import.csv</div>
+      </div>
+      <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-ghost btn-sm" onclick="downloadTemplate('company')">⬇ Download Company Template</button>
+        <button class="btn btn-ghost btn-sm" onclick="showTemplatePreview('company')">👁 View Format</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🏢 Registered Companies</div>
+      <div id="coList"></div>
+    </div>
+
+    <!-- Add company manually -->
+    <div class="card">
+      <div class="card-title">➕ Add Company Manually</div>
+      <div class="input-row">
+        <div class="field"><label class="label">Company Name *</label><input class="input" id="mcName" placeholder="TechCorp Sdn. Bhd."></div>
+        <div class="field"><label class="label">SSM Reg. No. *</label><input class="input" id="mcSSM" placeholder="202001012345"></div>
+      </div>
+      <div class="input-row">
+        <div class="field"><label class="label">LHDN / Tax No.</label><input class="input" id="mcLHDN" placeholder="C 1234567890"></div>
+        <div class="field"><label class="label">Phone</label><input class="input" id="mcPhone" placeholder="03-22345678"></div>
+      </div>
+      <div class="input-row">
+        <div class="field"><label class="label">Email</label><input class="input" id="mcEmail" placeholder="hr@company.com.my"></div>
+        <div class="field"><label class="label">State</label>
+          <select class="select" id="mcState">
+            <option>W.P. Kuala Lumpur</option><option>Selangor</option><option>Johor</option>
+            <option>Pulau Pinang</option><option>Perak</option><option>Sabah</option>
+            <option>Sarawak</option><option>Negeri Sembilan</option><option>Melaka</option>
+            <option>Kedah</option><option>Kelantan</option><option>Pahang</option>
+            <option>Terengganu</option><option>Perlis</option><option>W.P. Labuan</option>
+            <option>W.P. Putrajaya</option>
+          </select>
+        </div>
+      </div>
+      <div class="field"><label class="label">Address</label><input class="input" id="mcAddr" placeholder="Level 18, Menara ABC, Jalan Ampang"></div>
+      <div class="input-row">
+        <div class="field"><label class="label">Super Admin ID</label><input class="input" id="mcSAId" placeholder="SA001"></div>
+        <div class="field"><label class="label">Super Admin Password</label><input class="input" id="mcSAPin" type="password" placeholder="Min 8 chars"></div>
+      </div>
+      <button class="btn btn-primary" onclick="addCompanyManual()">🏢 Add Company</button>
+    </div>
+  </div>
+
+  <!-- Staff tab -->
+  <div id="setupTabStaff" style="display:none">
+    <div class="card">
+      <div class="card-title">📥 Upload Staff CSV</div>
+      <div class="card-sub">Upload staff data to register employees for sign-in</div>
+      <div class="drop-zone" id="stDropZone" onclick="document.getElementById('stFileInput').click()"
+        ondragover="event.preventDefault();this.classList.add('drag')"
+        ondragleave="this.classList.remove('drag')"
+        ondrop="handleDrop(event,'staff')">
+        <input type="file" id="stFileInput" accept=".csv" onchange="handleFile(this,'staff')">
+        <div style="font-size:32px;margin-bottom:8px">👥</div>
+        <div style="font-weight:700;color:var(--tp)">Drop CSV file here or click to browse</div>
+        <div style="font-size:11px;color:var(--ts);margin-top:4px">staff_import.csv</div>
+      </div>
+      <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-ghost btn-sm" onclick="downloadTemplate('staff')">⬇ Download Staff Template</button>
+        <button class="btn btn-ghost btn-sm" onclick="showTemplatePreview('staff')">👁 View Format</button>
+      </div>
+    </div>
+
+    <!-- Add staff manually -->
+    <div class="card">
+      <div class="card-title">➕ Add Staff Manually</div>
+      <div class="input-row">
+        <div class="field"><label class="label">Staff ID *</label><input class="input" id="msId" placeholder="E001"></div>
+        <div class="field"><label class="label">Employee No.</label><input class="input" id="msEmpNo" placeholder="EMP001"></div>
+      </div>
+      <div class="input-row">
+        <div class="field"><label class="label">Full Name *</label><input class="input" id="msName" placeholder="Ahmad Farid bin Azman"></div>
+        <div class="field"><label class="label">Preferred Name</label><input class="input" id="msPref" placeholder="Farid"></div>
+      </div>
+      <div class="input-row">
+        <div class="field"><label class="label">NRIC</label><input class="input" id="msNRIC" placeholder="850101-14-1234"></div>
+        <div class="field"><label class="label">Department</label><input class="input" id="msDept" placeholder="Finance"></div>
+      </div>
+      <div class="input-row">
+        <div class="field"><label class="label">Grade</label><input class="input" id="msGrade" placeholder="G4"></div>
+        <div class="field"><label class="label">Role</label><input class="input" id="msRole" placeholder="HR Manager"></div>
+      </div>
+      <div class="input-row">
+        <div class="field"><label class="label">Employment Type</label>
+          <select class="select" id="msType">
+            <option>Permanent</option><option>Contract</option><option>Part-Time</option>
+            <option>Internship</option><option>Probation</option>
+          </select>
+        </div>
+        <div class="field"><label class="label">Company</label>
+          <select class="select" id="msCompany"></select>
+        </div>
+      </div>
+      <div class="field"><label class="label">Join Date</label><input class="input" type="date" id="msJoin"></div>
+      <button class="btn btn-primary" onclick="addStaffManual()">👤 Add Staff Member</button>
+    </div>
+  </div>
+
+  <!-- Licensing tab -->
+  <div id="setupTabLicense" style="display:none">
+    <div class="card">
+      <div class="card-title">🔑 License Management</div>
+      <div class="card-sub">Manage Sign-In app licenses per company (SaaS)</div>
+      <div id="licenseList"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">➕ Assign / Update License</div>
+      <div class="input-row">
+        <div class="field"><label class="label">Company</label><select class="select" id="licCoSelect"></select></div>
+        <div class="field"><label class="label">Plan</label>
+          <select class="select" id="licPlan">
+            <option value="starter">Starter — Up to 10 staff — RM 49/mo</option>
+            <option value="growth" selected>Growth — Up to 50 staff — RM 149/mo</option>
+            <option value="business">Business — Up to 200 staff — RM 399/mo</option>
+            <option value="enterprise">Enterprise — Unlimited — RM 799/mo</option>
+          </select>
+        </div>
+      </div>
+      <div class="input-row">
+        <div class="field"><label class="label">Expiry Date</label><input class="input" type="date" id="licExpiry"></div>
+        <div class="field"><label class="label">License Key</label><input class="input" id="licKey" placeholder="Auto-generated"></div>
+      </div>
+      <button class="btn btn-primary" onclick="assignLicense()">🔑 Assign License</button>
+    </div>
+  </div>
+
+  <!-- HRCloud Export tab -->
+  <div id="setupTabExport" style="display:none">
+    <div class="card" style="background:linear-gradient(135deg,#0D1226,#1a2040);border:none">
+      <div class="card-title" style="color:#fff;font-size:17px">🔗 HRCloud Integration</div>
+      <div style="color:rgba(255,255,255,.55);font-size:12px;margin-bottom:20px">
+        Export attendance data in the exact format accepted by HRCloud Malaysia's Import module.
+        Upload the exported file via HRCloud → Import → Upload.
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <button class="btn" style="background:rgba(79,110,247,.25);color:#fff;border:1px solid rgba(79,110,247,.4)" onclick="exportHRCloudAttendance()">
+          ⏰ Export Attendance CSV<br><span style="font-size:10px;font-weight:400">Clock in/out → HRCloud format</span>
+        </button>
+        <button class="btn" style="background:rgba(5,150,105,.25);color:#fff;border:1px solid rgba(5,150,105,.4)" onclick="exportHRCloudStaff()">
+          👥 Export Staff CSV<br><span style="font-size:10px;font-weight:400">Staff register → HRCloud employee import</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="card" style="background:linear-gradient(135deg,#0f2350,#1a2040);border:none">
+      <div class="card-title" style="color:#fff;margin-bottom:8px">📲 Install as App on Any Device</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:12px">
+        <div style="background:rgba(255,255,255,.07);border-radius:10px;padding:12px">
+          <div style="color:#fff;font-weight:700;margin-bottom:6px">🤖 Android (Chrome)</div>
+          <div style="color:rgba(255,255,255,.6);line-height:1.8">
+            1. Open in Chrome<br>
+            2. Tap ⋮ → <strong style="color:#fff">Add to Home screen</strong><br>
+            3. Tap <strong style="color:#fff">Install</strong><br>
+            — or tap <strong style="color:#fff">📲 Install App</strong> button at top
+          </div>
+        </div>
+        <div style="background:rgba(255,255,255,.07);border-radius:10px;padding:12px">
+          <div style="color:#fff;font-weight:700;margin-bottom:6px">🍎 iPhone / iPad (Safari)</div>
+          <div style="color:rgba(255,255,255,.6);line-height:1.8">
+            1. Open in Safari<br>
+            2. Tap <strong style="color:#fff">⎙ Share</strong> button<br>
+            3. Tap <strong style="color:#fff">Add to Home Screen</strong><br>
+            4. Tap <strong style="color:#fff">Add</strong>
+          </div>
+        </div>
+        <div style="background:rgba(255,255,255,.07);border-radius:10px;padding:12px">
+          <div style="color:#fff;font-weight:700;margin-bottom:6px">📱 Huawei</div>
+          <div style="color:rgba(255,255,255,.6);line-height:1.8">
+            1. Open in Huawei Browser<br>
+            2. Tap ⋮ menu<br>
+            3. Tap <strong style="color:#fff">Add to Home screen</strong>
+          </div>
+        </div>
+        <div style="background:rgba(255,255,255,.07);border-radius:10px;padding:12px">
+          <div style="color:#fff;font-weight:700;margin-bottom:6px">💻 PC / Laptop</div>
+          <div style="color:rgba(255,255,255,.6);line-height:1.8">
+            1. Open in Chrome / Edge<br>
+            2. Click ⊕ icon in address bar<br>
+            3. Click <strong style="color:#fff">Install</strong>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:12px;padding:10px 14px;background:rgba(79,110,247,.15);border-radius:8px;font-size:11px;color:rgba(255,255,255,.6)">
+        ✓ Works offline after first load &nbsp;·&nbsp; ✓ No app store needed &nbsp;·&nbsp; ✓ Auto-updates when online
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📋 Integration Guide</div>
+      <div style="font-size:12px;color:var(--ts);line-height:2">
+        <div><span class="chip">1</span> &nbsp; Set up companies and staff in the Setup tab above</div>
+        <div><span class="chip">2</span> &nbsp; Configure geofence zones for each office/site</div>
+        <div><span class="chip">3</span> &nbsp; Staff sign in daily using their Employee ID</div>
+        <div><span class="chip">4</span> &nbsp; Admin exports attendance CSV (HRCloud format)</div>
+        <div><span class="chip">5</span> &nbsp; Upload to HRCloud → Import → Attendance tab</div>
+        <div style="margin-top:12px;padding:10px 14px;background:var(--amberL);border-radius:8px;color:var(--amber)">
+          ⚠ Employee IDs in this Sign-In app must match the Employee IDs in HRCloud exactly for the import to link correctly.
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📄 CSV Format Specs</div>
+      <div style="overflow-x:auto">
+        <table class="tbl">
+          <thead><tr><th>Export File</th><th>Columns</th><th>Upload to HRCloud</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Attendance CSV</strong></td>
+              <td style="font-size:11px">Employee ID, Employee Name, Date, Clock In, Clock Out, Break Start, Break End, Total Hours, Overtime Hours, Shift Code, Status, Late Minutes, Work Location, Remarks</td>
+              <td>Import → Upload → Attendance</td></tr>
+            <tr><td><strong>Staff CSV</strong></td>
+              <td style="font-size:11px">Employee ID, Employee No, Full Name, Dept, Grade, Role, Employment Type, Join Date, Company SSM</td>
+              <td>Import → Upload → Employees</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /pageSetup -->
+
+<!-- ════════════════════════════════ TEMPLATE PREVIEW MODAL -->
+<div id="templateModal" style="display:none;position:fixed;inset:0;background:rgba(13,18,38,.5);z-index:200;overflow-y:auto;padding:20px">
+  <div style="background:#fff;border-radius:16px;max-width:700px;margin:0 auto;overflow:hidden">
+    <div style="background:var(--tp);padding:18px 22px;display:flex;justify-content:space-between;align-items:center">
+      <div style="color:#fff;font-weight:800;font-size:15px" id="tplModalTitle">Template Format</div>
+      <button onclick="document.getElementById('templateModal').style.display='none'" style="background:none;border:none;color:#fff;font-size:22px;cursor:pointer">✕</button>
+    </div>
+    <div style="padding:20px" id="tplModalContent"></div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════════════
+// HRCLOUD SIGN-IN — Database + Mandatory GPS
+// ══════════════════════════════════════════════════════════════════════
+
+// ── IndexedDB database ────────────────────────────────────────────────
+var DB_NAME    = 'HRSignInDB';
+var DB_VERSION = 3;  // bumped to 3: adds deviceBindings store
+var db         = null;
+var DB_STORES  = ['companies','staff','logs','geo','licenses','deviceBindings'];
+
+function openDB() {
+  return new Promise(function(resolve, reject) {
+    var req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = function(e) {
+      var d = e.target.result;
+      DB_STORES.forEach(function(name) {
+        if (!d.objectStoreNames.contains(name)) {
+          var keyPath = name === 'logs' ? 'id' : 'id';
+          d.createObjectStore(name, { keyPath: 'id', autoIncrement: name === 'logs' });
+        }
+      });
+      // Index on logs for fast date queries
+      if (d.objectStoreNames.contains('logs')) {
+        var logStore = e.target.transaction.objectStore('logs');
+        if (!logStore.indexNames.contains('date'))      logStore.createIndex('date',      'date');
+        if (!logStore.indexNames.contains('empId'))     logStore.createIndex('empId',     'empId');
+        if (!logStore.indexNames.contains('companyId')) logStore.createIndex('companyId', 'companyId');
+      }
+      // Index on deviceBindings
+      if (d.objectStoreNames.contains('deviceBindings')) {
+        var devStore = e.target.transaction.objectStore('deviceBindings');
+        if (!devStore.indexNames.contains('empId'))  devStore.createIndex('empId',  'empId');
+        if (!devStore.indexNames.contains('active')) devStore.createIndex('active', 'active');
+      }
+    };
+    req.onsuccess  = function(e) { db = e.target.result; resolve(db); };
+    req.onerror    = function(e) { console.error('IndexedDB error', e); reject(e); };
+  });
+}
+
+function dbGetAll(storeName) {
+  return new Promise(function(resolve, reject) {
+    if (!db) { resolve(lsLoad(storeName) || []); return; }
+    var tx  = db.transaction(storeName, 'readonly');
+    var req = tx.objectStore(storeName).getAll();
+    req.onsuccess = function() { resolve(req.result || []); };
+    req.onerror   = function() { resolve(lsLoad(storeName) || []); };
+  });
+}
+
+function dbPut(storeName, obj) {
+  return new Promise(function(resolve, reject) {
+    if (!db) { lsSaveItem(storeName, obj); resolve(obj); return; }
+    var tx  = db.transaction(storeName, 'readwrite');
+    var req = tx.objectStore(storeName).put(obj);
+    req.onsuccess = function() { resolve(obj); };
+    req.onerror   = function(e) { console.error('dbPut error', e); resolve(obj); };
+  });
+}
+
+function dbDelete(storeName, id) {
+  return new Promise(function(resolve) {
+    if (!db) { resolve(); return; }
+    var tx = db.transaction(storeName, 'readwrite');
+    tx.objectStore(storeName).delete(id);
+    tx.oncomplete = function() { resolve(); };
+  });
+}
+
+function dbClear(storeName) {
+  return new Promise(function(resolve) {
+    if (!db) { localStorage.removeItem('hrsignin_'+storeName); resolve(); return; }
+    var tx = db.transaction(storeName, 'readwrite');
+    tx.objectStore(storeName).clear();
+    tx.oncomplete = function() { resolve(); };
+  });
+}
+
+// ── localStorage helpers (fallback + sync) ────────────────────────────
+var LS_PREFIX = 'hrsignin_';
+function lsLoad(key) {
+  try { var v = localStorage.getItem(LS_PREFIX+key); return v ? JSON.parse(v) : null; }
+  catch(e){ return null; }
+}
+function lsSaveAll(key, arr) {
+  try { localStorage.setItem(LS_PREFIX+key, JSON.stringify(arr)); } catch(e){}
+}
+function lsSaveItem(storeName, obj) {
+  // merge into localStorage array
+  try {
+    var arr = lsLoad(storeName) || [];
+    var idx = arr.findIndex(function(x){ return x.id === obj.id; });
+    if (idx >= 0) arr[idx] = obj; else arr.push(obj);
+    localStorage.setItem(LS_PREFIX+storeName, JSON.stringify(arr));
+  } catch(e){}
+}
+
+// ── In-memory state ───────────────────────────────────────────────────
+var companies = [];
+var staff     = [];
+var logs      = [];
+var geoZones  = [];
+var licenses  = {};
+var activeCoId = null;
+var activeCo   = null;
+
+// ── GPS state ─────────────────────────────────────────────────────────
+var userLat      = null;
+var userLng      = null;
+var userAccuracy = null;
+var geoGranted   = false;
+var geoError     = false;
+var geoWatchId   = null;
+var GPS_REQUIRED  = true;   // hard gate: cannot punch without GPS
+var GPS_HIGH_ACCURACY = false; // false = WiFi/cell/GPS (recommended for offices)
+                               // true  = GPS satellite only (outdoor/site use)
+// NOTE: The browser uses ALL available location sources automatically:
+//   GPS chip (3-15m outdoors), WiFi positioning (10-40m indoors),
+//   Cell tower (100-2000m), IP address (city-level fallback).
+//   For office geofencing, WiFi positioning is accurate enough (10-40m)
+//   and works indoors without draining battery.
+
+// ── Admin tab state ───────────────────────────────────────────────────
+var adminTab = 'log';
+
+// ══════════════════════════════════════════════════════════════════════
+// BOOT — open DB then load all data
+// ══════════════════════════════════════════════════════════════════════
+window.onload = function() {
+  showGpsGate(); // show gate immediately before anything
+  openDB()
+    .then(seedDemoData)
+    .then(loadAllData)
+    .then(function() {
+      updateClock();
+      setInterval(updateClock, 1000);
+      startGeo();              // GPS — enables button when acquired
+      checkDeviceBinding();    // Device registration check
+      checkAdminSession();  // restore admin session if still valid
+      checkAdminSession();
+      populateDropdowns();
+      renderTodayLog();
+      renderAdminDash();
+      renderCoList();
+      renderLicenseList();
+      renderGeoConfig();
+      renderDeviceList();
+      document.getElementById('adminDate').value = todayStr();
+    })
+    .catch(function(e) {
+      console.error('Boot error', e);
+      // Fall back to localStorage
+      fallbackToLS().then(function(){
+        updateClock(); setInterval(updateClock,1000);
+        startGeo();
+        populateDropdowns(); renderTodayLog(); renderAdminDash();
+        renderCoList(); renderLicenseList(); renderGeoConfig();
+        document.getElementById('adminDate').value = todayStr();
+      });
+    });
+};
+
+async function seedDemoData() {
+  var cos = await dbGetAll('companies');
+  if (cos.length > 0) return; // already seeded
+  var demoCos = [
+    { id:'CO001', name:'TechCorp Sdn. Bhd.',          ssmNo:'202001012345', lhdnNo:'C 1234567890', epfNo:'EP 1234567', socsoNo:'SO 1234567', phone:'03-22345678', email:'hr@techcorp.com.my',  addr1:'Level 18, Menara TechCorp, Jalan Ampang', city:'Kuala Lumpur', postcode:'50450', state:'W.P. Kuala Lumpur', country:'Malaysia', superAdminId:'SA001', superAdminPin:'Admin@TC2025' },
+    { id:'CO002', name:'TechCorp Logistics Sdn. Bhd.',ssmNo:'202101056789', lhdnNo:'C 9876543210', epfNo:'EP 7654321', socsoNo:'SO 7654321', phone:'03-33456789', email:'hr@tclogistics.com.my',addr1:'Lot 5, Jalan Industri 3, Hicom',         city:'Shah Alam',    postcode:'40150', state:'Selangor',          country:'Malaysia', superAdminId:'SA002', superAdminPin:'Admin@TCL2025' },
+  ];
+  var demoStaff = [
+    { id:'E001', empNo:'EMP001', name:'Ahmad Farid bin Azman',       preferred:'Farid',    nric:'850101-14-1234', dept:'Finance',    grade:'G4', role:'HR Manager',      type:'Permanent',  companyId:'CO001', joinDate:'2018-03-15' },
+    { id:'E002', empNo:'EMP002', name:'Siti Nuraini binti Hassan',   preferred:'Ain',      nric:'900522-10-5678', dept:'HR',         grade:'G3', role:'HR Executive',    type:'Permanent',  companyId:'CO001', joinDate:'2019-06-01' },
+    { id:'E003', empNo:'EMP003', name:'Rajesh Kumar a/l Subramaniam',preferred:'Rajesh',   nric:'881115-08-3456', dept:'IT',         grade:'G4', role:'IT Manager',      type:'Permanent',  companyId:'CO001', joinDate:'2017-01-10' },
+    { id:'E004', empNo:'EMP004', name:'Wei Ting Lim',                preferred:'Wei Ting', nric:'950308-14-7890', dept:'Sales',      grade:'G2', role:'Sales Executive', type:'Permanent',  companyId:'CO001', joinDate:'2021-04-01' },
+    { id:'E005', empNo:'EMP005', name:'Nurul Hidayah binti Razak',   preferred:'Hidayah',  nric:'920720-04-2345', dept:'Operations', grade:'G2', role:'Operations Asst', type:'Probation',  companyId:'CO001', joinDate:'2022-10-01' },
+  ];
+  var demoGeo = [
+    { id:'G001', name:'TechCorp HQ',        companyId:'CO001', lat:3.1578, lng:101.7123, radius:100 },
+    { id:'G002', name:'TC Logistics Depot', companyId:'CO002', lat:3.0738, lng:101.5183, radius:150 },
+  ];
+  var demoLic = [
+    { id:'LIC-CO001', companyId:'CO001', plan:'growth',   maxStaff:50,  status:'Active', expiry:'2027-12-31', key:'HRSIGNIN-CO001-2025' },
+    { id:'LIC-CO002', companyId:'CO002', plan:'starter',  maxStaff:10,  status:'Active', expiry:'2026-06-30', key:'HRSIGNIN-CO002-2025' },
+  ];
+  for (var co of demoCos)  await dbPut('companies', co);
+  for (var st of demoStaff) await dbPut('staff', st);
+  for (var gz of demoGeo)  await dbPut('geo', gz);
+  for (var li of demoLic)  await dbPut('licenses', li);
+}
+
+async function loadAllData() {
+  companies = await dbGetAll('companies');
+  staff     = await dbGetAll('staff');
+  logs      = await dbGetAll('logs');
+  geoZones  = await dbGetAll('geo');
+  var licArr= await dbGetAll('licenses');
+  licenses  = {};
+  licArr.forEach(function(l){ licenses[l.companyId] = l; });
+  activeCoId = companies.length ? companies[0].id : null;
+  activeCo   = companies[0] || null;
+  // Sync to localStorage as fallback
+  lsSaveAll('companies', companies);
+  lsSaveAll('staff',     staff);
+  lsSaveAll('logs',      logs);
+  lsSaveAll('geo',       geoZones);
+}
+
+async function fallbackToLS() {
+  companies = lsLoad('companies') || [];
+  staff     = lsLoad('staff')     || [];
+  logs      = lsLoad('logs')      || [];
+  geoZones  = lsLoad('geo')       || [];
+  var licArr= lsLoad('licenses')  || [];
+  licenses  = {};
+  licArr.forEach(function(l){ if(l.companyId) licenses[l.companyId]=l; });
+  activeCoId = companies.length ? companies[0].id : null;
+  activeCo   = companies[0]     || null;
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// GPS — MANDATORY GATE
+// ══════════════════════════════════════════════════════════════════════
+function showGpsGate() {
+  var btn = document.getElementById('signinBtn');
+  if (btn) {
+    btn.disabled = true;
+    btn.title = 'Location access required to clock in/out';
+  }
+  setGeoStatus('wait', 'Location access required — please tap "Allow" when prompted');
+}
+
+function startGeo() {
+  if (!navigator.geolocation) {
+    geoError = true;
+    setGeoStatus('off', '⛔ This device does not support GPS. Contact your administrator.');
+    lockSigninBtn('GPS not available on this device');
+    return;
+  }
+  setGeoStatus('wait', '📡 Requesting location — tap "Allow" when prompted.\nUses GPS outdoors, WiFi indoors, or mobile network automatically.');
+  geoWatchId = navigator.geolocation.watchPosition(
+    onGeoSuccess,
+    onGeoError,
+    { enableHighAccuracy: GPS_HIGH_ACCURACY, timeout: 15000, maximumAge: 30000 }
+  );
+}
+
+function onGeoSuccess(pos) {
+  userLat      = pos.coords.latitude;
+  userLng      = pos.coords.longitude;
+  userAccuracy = Math.round(pos.coords.accuracy);
+  geoGranted   = true;
+  geoError     = false;
+  checkGeofenceAndUpdateBtn();
+}
+
+function onGeoError(err) {
+  geoError   = true;
+  geoGranted = false;
+  var msgs = {
+    1: '⛔ Location access DENIED — you must allow location to clock in. Go to browser settings → Site permissions → Location → Allow.',
+    2: '⚠ Location signal unavailable. Move to an area with GPS signal.',
+    3: '⚠ Location request timed out. Retrying…'
+  };
+  var msg = msgs[err.code] || 'GPS error';
+  setGeoStatus('fail', msg);
+  lockSigninBtn(err.code === 1
+    ? 'Allow location access to clock in/out'
+    : 'GPS unavailable — cannot punch without location');
+  // Retry on timeout
+  if (err.code === 3) setTimeout(startGeo, 5000);
+}
+
+function lockSigninBtn(reason) {
+  var btn = document.getElementById('signinBtn');
+  if (btn) {
+    btn.disabled = true;
+    btn.title    = reason;
+  }
+  updateSigninBtnLabel();
+}
+
+function unlockSigninBtn() {
+  // Only unlock if staff ID is filled and geo is available
+  var btn = document.getElementById('signinBtn');
+  if (!btn) return;
+  if (GPS_REQUIRED && (!geoGranted || userLat === null)) {
+    btn.disabled = true;
+    btn.title    = 'Waiting for GPS location…';
+    return;
+  }
+  if (!currentStaffId) {
+    btn.disabled = true;
+    btn.title    = 'Enter your Staff ID first';
+    return;
+  }
+  btn.disabled = false;
+  btn.title    = '';
+}
+
+function updateSigninBtnLabel() {
+  var lbl = document.getElementById('signinBtnLabel');
+  if (!lbl) return;
+  if (GPS_REQUIRED && (!geoGranted || userLat === null)) {
+    lbl.textContent = geoError
+      ? '⛔ Location access required'
+      : '📡 Waiting for GPS…';
+  } else if (!currentStaffId) {
+    lbl.textContent = 'Clock In / Out';
+  }
+}
+
+function checkGeofenceAndUpdateBtn() {
+  var zones = geoZones.filter(function(z){ return !activeCoId || z.companyId === activeCoId; });
+  var inside = true;
+  var nearestZone = null;
+  var nearestDist = Infinity;
+
+  if (zones.length > 0) {
+    var anyInside = false;
+    zones.forEach(function(z) {
+      var d = haversine(userLat, userLng, z.lat, z.lng);
+      if (d < nearestDist) { nearestDist = d; nearestZone = z; }
+      if (d <= z.radius) anyInside = true;
+    });
+    inside = anyInside;
+  }
+
+  // Update geo status bar
+  if (zones.length === 0) {
+    setGeoStatus('ok',
+      '✓ Location acquired · ' + userLat.toFixed(5) + ', ' + userLng.toFixed(5) +
+      ' ±' + userAccuracy + 'm · ' + (userAccuracy <= 20 ? 'GPS' : userAccuracy <= 100 ? 'WiFi' : 'Cell/Network') + ' · No geofence zones (all locations allowed)');
+  } else if (inside) {
+    setGeoStatus('ok',
+      '✓ Within geofence: ' + nearestZone.name +
+      ' · ' + Math.round(nearestDist) + 'm from centre' +
+      ' · ±' + userAccuracy + 'm accuracy' +
+      ' (' + (userAccuracy <= 20 ? '📡 GPS' : userAccuracy <= 100 ? '📶 WiFi' : '📱 Cell/Network') + ')');
+  } else {
+    setGeoStatus('fail',
+      '✗ Outside geofence · ' + (nearestZone ? nearestZone.name + ': ' + Math.round(nearestDist) + 'm away (radius: ' + nearestZone.radius + 'm)' : '') +
+      ' · ±' + userAccuracy + 'm accuracy' +
+      ' (' + (userAccuracy <= 20 ? '📡 GPS' : userAccuracy <= 100 ? '📶 WiFi' : '📱 Cell/Network') + ')');
+  }
+
+  // Update map
+  if (nearestZone) renderMap(nearestZone, userLat, userLng);
+  else renderMap(null, userLat, userLng);
+
+  // Update button — GPS is now available so unlock (if staff ID also present)
+  unlockSigninBtn();
+  updateSigninBtnLabel();
+}
+
+function checkGeofence() { if (geoGranted && userLat !== null) checkGeofenceAndUpdateBtn(); }
+
+// ══════════════════════════════════════════════════════════════════════
+// CLOCK / DATE
+// ══════════════════════════════════════════════════════════════════════
+function todayStr() {
+  var d = new Date();
+  return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+}
+function pad(n){ return String(n).padStart(2,'0'); }
+function timeStr() {
+  var d = new Date();
+  return pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds());
+}
+function updateClock() {
+  var d = new Date();
+  var days   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var dateEl = document.getElementById('heroDate');
+  if (dateEl) dateEl.textContent =
+    days[d.getDay()] + ', ' + d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear() +
+    ' · ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+  if (activeCo) {
+    var badge = document.getElementById('coBadge');
+    if (badge) badge.style.display = 'flex';
+    var cnn = document.getElementById('coName');
+    if (cnn) cnn.textContent = activeCo.name;
+    var crg = document.getElementById('coReg');
+    if (crg) crg.textContent  = 'SSM: ' + activeCo.ssmNo;
+    var ht = document.getElementById('heroTitle');
+    if (ht) ht.textContent = activeCo.name + ' — Staff Sign-In';
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// GEOFENCE UTILITIES
+// ══════════════════════════════════════════════════════════════════════
+function haversine(lat1, lng1, lat2, lng2) {
+  var R    = 6371000;
+  var dLat = (lat2 - lat1) * Math.PI / 180;
+  var dLng = (lng2 - lng1) * Math.PI / 180;
+  var a    = Math.sin(dLat/2)*Math.sin(dLat/2) +
+             Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*
+             Math.sin(dLng/2)*Math.sin(dLng/2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function setGeoStatus(state, msg) {
+  var el = document.getElementById('geoStatus');
+  if (!el) return;
+  el.className = 'geo-status geo-' + state;
+  var dotClass = { ok:'dot-green', fail:'dot-red', wait:'dot-amber', off:'dot-grey' }[state] || 'dot-grey';
+  var labels   = { ok:'Location Verified ✓', fail:'Location Error ✗', wait:'Acquiring Location…', off:'Location Unavailable' };
+  el.innerHTML =
+    '<div class="geo-dot ' + dotClass + '"></div>' +
+    '<div style="flex:1"><div style="font-weight:700">' + (labels[state]||state) + '</div>' +
+    '<div style="font-size:10px;margin-top:1px;opacity:.8">' + msg + '</div></div>' +
+    (state==='fail' && GPS_REQUIRED
+      ? '<button class="btn btn-sm" style="background:var(--red);color:#fff;white-space:nowrap" onclick="startGeo()">🔄 Retry GPS</button>'
+      : '');
+}
+
+function renderMap(zone, uLat, uLng) {
+  var map   = document.getElementById('mapPreview');
+  var fence = document.getElementById('mapFence');
+  var pin   = document.getElementById('mapPin');
+  var lbl   = document.getElementById('mapLabel');
+  if (!map) return;
+  var W = map.offsetWidth || 340;
+  var H = 160;
+  if (!zone) {
+    if (fence) fence.innerHTML = '';
+    if (pin)   pin.innerHTML   = '';
+    if (lbl)   lbl.textContent = uLat
+      ? '📍 ' + uLat.toFixed(5) + ', ' + uLng.toFixed(5) + ' ±' + (userAccuracy||'?') + 'm'
+      : '📡 Waiting for GPS signal…';
+    return;
+  }
+  var scale    = Math.min(W, H) / (zone.radius * 2.5);
+  var cx = W / 2, cy = H / 2;
+  var pxRadius = zone.radius * scale;
+  var dxPx     = (uLng - zone.lng) * 111320 * Math.cos(zone.lat * Math.PI / 180) * scale;
+  var dyPx     = -(uLat - zone.lat) * 111320 * scale;
+  var px = Math.max(10, Math.min(W-10, cx + dxPx));
+  var py = Math.max(10, Math.min(H-10, cy + dyPx));
+  var inside = haversine(uLat, uLng, zone.lat, zone.lng) <= zone.radius;
+  if (fence) fence.innerHTML =
+    '<div class="fence-ring" style="width:'+pxRadius*2+'px;height:'+pxRadius*2+'px;left:'+cx+'px;top:'+cy+'px"></div>' +
+    '<div style="position:absolute;left:'+cx+'px;top:'+cy+'px;transform:translate(-50%,-50%);width:8px;height:8px;background:var(--accent);border-radius:50%;opacity:.6"></div>';
+  if (pin) pin.innerHTML =
+    '<div class="map-pin" style="left:'+px+'px;top:'+py+'px">' +
+    '<div class="map-pin-dot" style="background:'+(inside?'var(--green)':'var(--red)')+'"></div>' +
+    '<div class="map-pin-tail" style="background:'+(inside?'var(--green)':'var(--red)')+'"></div></div>';
+  if (lbl) lbl.textContent = '📍 ' + zone.name + ' · ' + uLat.toFixed(5) + ', ' + uLng.toFixed(5) + ' ±' + (userAccuracy||'?') + 'm';
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// SIGN-IN FLOW
+// ══════════════════════════════════════════════════════════════════════
+var currentStaffId = '';
+
+function onStaffIdInput(val) {
+  currentStaffId = val.toUpperCase();
+  document.getElementById('staffIdInput').value = currentStaffId;
+  updateStaffPreview();
+  unlockSigninBtn();
+}
+
+function padKey(k) {
+  if (k === 'DEL') {
+    currentStaffId = currentStaffId.slice(0, -1);
+  } else if (k === 'E') {
+    if (!currentStaffId.startsWith('E')) currentStaffId = 'E' + currentStaffId;
+  } else {
+    if (currentStaffId.length < 10) currentStaffId += k;
+  }
+  document.getElementById('staffIdInput').value = currentStaffId;
+  updateStaffPreview();
+  unlockSigninBtn();
+}
+
+function updateStaffPreview() {
+  var emp       = staff.find(function(e){ return e.id === currentStaffId || e.empNo === currentStaffId; });
+  var previewEl = document.getElementById('staffPreview');
+  var lbl       = document.getElementById('signinBtnLabel');
+  if (!emp) {
+    if (previewEl) previewEl.style.display = 'none';
+    if (lbl && geoGranted) lbl.textContent = currentStaffId ? 'Sign In (unregistered ID)' : 'Clock In / Out';
+    return;
+  }
+  if (previewEl) previewEl.style.display = 'block';
+  var av = document.getElementById('staffAvatar');
+  if (av) av.textContent = (emp.preferred || emp.name || '?')[0].toUpperCase();
+  var sn = document.getElementById('staffName');
+  if (sn) sn.textContent = emp.name;
+  var sm = document.getElementById('staffMeta');
+  if (sm) sm.textContent = emp.empNo + ' · ' + emp.dept + ' · ' + emp.role;
+
+  var today     = todayStr();
+  var todayLogs = logs.filter(function(l){ return l.empId === emp.id && l.date === today; });
+  var last      = todayLogs[todayLogs.length-1];
+  var lastEl    = document.getElementById('staffLastAction');
+  if (lastEl) {
+    if (last) {
+      lastEl.innerHTML = '<span class="badge '+(last.action==='IN'?'badge-green':'badge-red')+'">Last: '+last.action+' at '+last.time+'</span>';
+    } else {
+      lastEl.innerHTML = '<span class="badge badge-blue">Not signed in today</span>';
+    }
+  }
+  var nextAction = (!last || last.action === 'OUT') ? 'IN' : 'OUT';
+  if (lbl && geoGranted) lbl.textContent = 'Clock ' + nextAction + ' — ' + (emp.preferred || emp.name.split(' ')[0]);
+  var ss = document.getElementById('staffStatus');
+  if (ss) ss.innerHTML = '<div style="text-align:right"><div style="font-size:11px;color:var(--ts)">Next</div><div class="badge '+(nextAction==='IN'?'badge-green':'badge-red')+'" style="margin-top:3px">'+nextAction+'</div></div>';
+}
+
+async function doSignIn() {
+  var sid = currentStaffId.trim();
+  if (!sid) { showToast('Enter your Staff ID first', 'err'); return; }
+
+  // ── DEVICE BINDING CHECK ─────────────────────────────────────────
+  if (!deviceBindingCheck(sid)) return; // blocks if wrong staff on this device
+
+  // ── HARD GPS CHECK ────────────────────────────────────────────────
+  if (GPS_REQUIRED) {
+    if (!geoGranted || userLat === null) {
+      showToast('⛔ Location access required. Allow GPS to clock in.', 'err');
+      startGeo(); // prompt again
+      return;
+    }
+  }
+
+  var emp    = staff.find(function(e){ return e.id === sid || e.empNo === sid; });
+  var today  = todayStr();
+  var todayLogs = logs.filter(function(l){ return l.empId === (emp?emp.id:sid) && l.date===today; });
+  var last   = todayLogs[todayLogs.length-1];
+  var action = (!last || last.action === 'OUT') ? 'IN' : 'OUT';
+
+  // ── Geofence check ────────────────────────────────────────────────
+  var zones = geoZones.filter(function(z){ return !activeCoId || z.companyId === activeCoId; });
+  var geoOk = true;
+  var geoNote = 'GPS verified';
+  if (zones.length > 0) {
+    var inside = zones.some(function(z){ return haversine(userLat, userLng, z.lat, z.lng) <= z.radius; });
+    geoOk   = inside;
+    geoNote = inside
+      ? 'Within geofence · ' + userLat.toFixed(5) + ', ' + userLng.toFixed(5)
+      : 'Outside geofence · ' + userLat.toFixed(5) + ', ' + userLng.toFixed(5);
+  } else {
+    geoNote = 'GPS: ' + userLat.toFixed(5) + ', ' + userLng.toFixed(5) + ' (no geofence zone)';
+  }
+
+  // ── Build record ──────────────────────────────────────────────────
+  var record = {
+    id:           'LOG-' + Date.now(),
+    empId:        emp ? emp.id   : sid,
+    empNo:        emp ? emp.empNo: sid,
+    name:         emp ? emp.name : '(Unknown: ' + sid + ')',
+    dept:         emp ? emp.dept : '—',
+    role:         emp ? emp.role : '—',
+    companyId:    emp ? emp.companyId : activeCoId,
+    date:         today,
+    time:         timeStr(),
+    timestamp:    new Date().toISOString(),
+    action:       action,
+    // ── GPS DATA ALWAYS SAVED ────────────────────────────────────────
+    lat:          userLat,
+    lng:          userLng,
+    accuracy:     userAccuracy,
+    locationSrc:  userAccuracy <= 20 ? 'GPS' : userAccuracy <= 100 ? 'WiFi' : 'Cell/Network',
+    geoOk:        geoOk,
+    geoNote:      geoNote,
+    geoZone:      zones.length > 0 ? (geoOk ? zones.find(function(z){ return haversine(userLat,userLng,z.lat,z.lng)<=z.radius; })||{name:'outside'} : {name:'outside'}) : {name:'no-zone'},
+    override:     false,
+    deviceToken:  getOrCreateDeviceToken(),
+  };
+
+  // ── Block on geofence fail (when zones exist) ─────────────────────
+  if (zones.length > 0 && !geoOk) {
+    showResultFail(record);
+    return;
+  }
+
+  // ── Save to IndexedDB + localStorage ─────────────────────────────
+  await dbPut('logs', record);
+  logs.push(record);
+  lsSaveAll('logs', logs);
+
+  showResultSuccess(record, emp);
+  renderTodayLog();
+  renderAdminDash();
+}
+
+function showResultSuccess(rec, emp) {
+  var form = document.getElementById('signinForm');
+  var res  = document.getElementById('resultScreen');
+  if (form) form.style.display = 'none';
+  if (!res) return;
+  res.style.display = 'block';
+  var mapsLink = rec.lat
+    ? 'https://maps.google.com/?q='+rec.lat+','+rec.lng
+    : null;
+  res.innerHTML =
+    '<div class="card success-anim">' +
+    '<div class="success-circle">' + (rec.action==='IN'?'✓':'👋') + '</div>' +
+    '<div style="font-size:22px;font-weight:900;color:var(--tp);margin-bottom:6px">Clocked ' + rec.action + '</div>' +
+    '<div style="font-size:15px;color:var(--ts);margin-bottom:2px">' + rec.name + '</div>' +
+    '<div style="font-size:12px;color:var(--ts);margin-bottom:16px">' + (emp?emp.empNo+' · '+emp.dept:rec.empId) + '</div>' +
+    '<div style="font-size:36px;font-weight:900;color:var(--accent);font-family:monospace;margin-bottom:4px">' + rec.time.slice(0,5) + '</div>' +
+    '<div style="font-size:13px;color:var(--ts);margin-bottom:16px">' + rec.date + '</div>' +
+    '<div style="background:var(--greenL);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:11px;color:var(--green)">' +
+    '📍 <strong>Location Recorded</strong> · <span style="font-size:10px">' + (rec.locationSrc||'Unknown') + '</span><br>' + rec.lat.toFixed(6) + ', ' + rec.lng.toFixed(6) + ' ±' + (rec.accuracy||'?') + 'm<br>' +
+    '<span class="badge '+(rec.geoOk?'badge-green':'badge-amber')+'" style="margin-top:4px">'+(rec.geoOk?'✓ Within geofence':'⚠ No geofence zone')+'</span>' +
+    (mapsLink ? ' <a href="'+mapsLink+'" target="_blank" style="font-size:10px;color:var(--accent);text-decoration:none">View on map ↗</a>' : '') +
+    '</div>' +
+    '<button class="btn btn-primary btn-full" onclick="resetSignin()">← Back to Sign-In</button>' +
+    '</div>';
+  showToast('✓ ' + rec.action + ': ' + rec.name + ' · ' + rec.time.slice(0,5), 'ok');
+  setTimeout(resetSignin, 8000);
+}
+
+function showResultFail(rec) {
+  var form = document.getElementById('signinForm');
+  var res  = document.getElementById('resultScreen');
+  if (form) form.style.display = 'none';
+  if (!res) return;
+  res.style.display = 'block';
+  res.innerHTML =
+    '<div class="card success-anim">' +
+    '<div class="fail-circle">✗</div>' +
+    '<div style="font-size:20px;font-weight:900;color:var(--red);margin-bottom:8px">Outside Geofence</div>' +
+    '<div style="font-size:13px;color:var(--ts);margin-bottom:16px">' + rec.name + ' — your current location is outside the permitted area.</div>' +
+    '<div style="background:var(--redL);border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:11px;color:var(--red)">' +
+    '📍 Your location: ' + rec.lat.toFixed(5) + ', ' + rec.lng.toFixed(5) + '<br>' + rec.geoNote + '</div>' +
+    '<button class="btn btn-ghost btn-full" style="margin-bottom:8px" onclick="resetSignin()">← Try Again</button>' +
+    '<button class="btn btn-full" style="background:var(--amber);color:#fff" onclick="overrideSignin('+JSON.stringify(rec).replace(/</g,'&lt;').replace(/>/g,'&gt;')+')">' +
+    '⚠ Manager Override (requires reason)</button>' +
+    '</div>';
+}
+
+async function overrideSignin(rec) {
+  var reason = prompt('Manager Override — enter reason (will be logged):');
+  if (!reason || !reason.trim()) { showToast('Override cancelled — reason required', 'err'); return; }
+  rec.geoNote  = 'OVERRIDE: ' + reason;
+  rec.override = true;
+  rec.geoOk    = true; // treat as ok after override
+  await dbPut('logs', rec);
+  logs.push(rec);
+  lsSaveAll('logs', logs);
+  showResultSuccess(rec, staff.find(function(e){ return e.id===rec.empId; }));
+  renderTodayLog();
+}
+
+function resetSignin() {
+  var form = document.getElementById('signinForm');
+  var res  = document.getElementById('resultScreen');
+  if (form) form.style.display = 'block';
+  if (res)  res.style.display  = 'none';
+  var inp = document.getElementById('staffIdInput');
+  if (inp) inp.value = '';
+  var prev = document.getElementById('staffPreview');
+  if (prev) prev.style.display = 'none';
+  currentStaffId = '';
+  unlockSigninBtn();
+  updateSigninBtnLabel();
+  setTimeout(function(){ var i=document.getElementById('staffIdInput'); if(i) i.focus(); }, 100);
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// TODAY LOG RENDER
+// ══════════════════════════════════════════════════════════════════════
+function renderTodayLog() {
+  var today     = todayStr();
+  var todayLogs = logs.filter(function(l){ return l.date === today; })
+    .sort(function(a,b){ return b.time.localeCompare(a.time); });
+  var cnt = document.getElementById('todayCount');
+  if (cnt) cnt.textContent = todayLogs.length + ' record' + (todayLogs.length!==1?'s':'') + ' today';
+  var el = document.getElementById('todayLog');
+  if (!el) return;
+  if (!todayLogs.length) {
+    el.innerHTML = '<div style="color:var(--ts);font-size:12px;padding:10px 0">No sign-ins recorded today.</div>';
+    return;
+  }
+  el.innerHTML = todayLogs.slice(0,10).map(function(l) {
+    return '<div class="record-row">' +
+      '<div class="record-icon '+(l.action==='IN'?'ri-in':'ri-out')+'">'+( l.action==='IN'?'↩':'↪')+'</div>' +
+      '<div class="record-info">' +
+        '<div class="record-name">'+l.name+'</div>' +
+        '<div class="record-meta">'+(l.empNo||l.empId)+' · '+l.dept+
+        ' · <span class="badge '+(l.geoOk?'badge-green':l.override?'badge-amber':'badge-red')+'">' +
+        (l.override?'⚠ Override':l.geoOk?'✓ GPS':'✗ Geo')+'</span></div>' +
+        (l.lat ? '<div style="font-size:10px;color:var(--tm);margin-top:2px">📍 '+l.lat.toFixed(4)+', '+l.lng.toFixed(4)+' ±'+(l.accuracy||'?')+'m</div>' : '') +
+      '</div>' +
+      '<div class="record-time">'+l.time.slice(0,5)+'<br><span style="font-size:9px;color:var(--ts);font-weight:400">'+l.action+'</span></div>' +
+      '</div>';
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// ADMIN DASHBOARD
+// ══════════════════════════════════════════════════════════════════════
+function populateDropdowns() {
+  var opts = companies.map(function(c){ return '<option value="'+c.id+'">'+c.name+'</option>'; }).join('');
+  ['adminCoFilter','msCompany','licCoSelect','geoCoSelect'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) {
+      var prefix = id==='adminCoFilter'?'<option value="ALL">All Companies</option>':'';
+      el.innerHTML = prefix + opts;
+    }
+  });
+}
+
+function renderAdminDash() {
+  var dateFilter = (document.getElementById('adminDate')||{}).value || todayStr();
+  var coFilter   = (document.getElementById('adminCoFilter')||{}).value || 'ALL';
+  var filtered   = logs.filter(function(l){
+    return l.date === dateFilter && (coFilter === 'ALL' || l.companyId === coFilter);
+  });
+  var inLogs    = filtered.filter(function(l){ return l.action==='IN'; });
+  var outLogs   = filtered.filter(function(l){ return l.action==='OUT'; });
+  var geoFails  = filtered.filter(function(l){ return !l.geoOk && !l.override; });
+  var overrides = filtered.filter(function(l){ return l.override; });
+  var uniqueEmp = new Set(filtered.map(function(l){ return l.empId; })).size;
+  var statsEl = document.getElementById('adminStats');
+  if (statsEl) statsEl.innerHTML = [
+    ['🟢','Clocked In',     inLogs.length],
+    ['🔴','Clocked Out',    outLogs.length],
+    ['👥','Unique Staff',   uniqueEmp],
+    ['📍','Geo Alerts',     geoFails.length],
+  ].map(function(s){ return '<div class="stat-card"><div class="stat-val">'+s[2]+'</div><div class="stat-lbl">'+s[1]+'</div></div>'; }).join('');
+  // Log table
+  var tbody = document.getElementById('adminLogBody');
+  if (!tbody) return;
+  var sorted = filtered.slice().sort(function(a,b){ return b.time.localeCompare(a.time); });
+  tbody.innerHTML = sorted.length ? sorted.map(function(l){
+    var co = companies.find(function(c){ return c.id===l.companyId; });
+    var mapsLink = l.lat ? 'https://maps.google.com/?q='+l.lat+','+l.lng : null;
+    return '<tr>' +
+      '<td style="font-family:monospace;font-weight:700">'+l.time+'</td>' +
+      '<td><span class="chip">'+l.empId+'</span></td>' +
+      '<td style="font-weight:600">'+l.name+'</td>' +
+      '<td>'+l.dept+'</td>' +
+      '<td><span class="badge '+(l.action==='IN'?'badge-green':'badge-red')+'">'+l.action+'</span></td>' +
+      '<td style="font-size:11px">' +
+        (l.lat
+          ? (mapsLink ? '<a href="'+mapsLink+'" target="_blank" style="color:var(--accent);text-decoration:none">'+l.lat.toFixed(4)+', '+l.lng.toFixed(4)+' ↗</a>' : l.lat.toFixed(4)+', '+l.lng.toFixed(4)) +
+            '<br><span style="color:var(--tm)">±'+(l.accuracy||'?')+'m</span>'
+          : '<span style="color:var(--tm)">No GPS</span>') +
+      '</td>' +
+      '<td><span class="badge '+(l.override?'badge-amber':l.geoOk?'badge-green':'badge-red')+'">'+(l.override?'Override':l.geoOk?'✓ OK':'✗ Fail')+'</span></td>' +
+      '<td style="font-size:11px">'+(co?co.name:'—')+'</td>' +
+      '</tr>';
+  }).join('') : '<tr><td colspan="8" style="text-align:center;color:var(--ts);padding:20px">No records for this date/company</td></tr>';
+  renderAdminStaff(dateFilter, coFilter);
+  var lbl = document.getElementById('adminCompanyLabel');
+  if (lbl) {
+    var coName = coFilter==='ALL'?'All Companies':(companies.find(function(c){return c.id===coFilter;})||{}).name||coFilter;
+    lbl.textContent = coName + ' · ' + dateFilter + ' · ' + filtered.length + ' records';
+  }
+}
+
+function renderAdminStaff(dateFilter, coFilter) {
+  var tbody = document.getElementById('adminStaffBody');
+  if (!tbody) return;
+  var filtStaff = coFilter==='ALL' ? staff : staff.filter(function(e){ return e.companyId===coFilter; });
+  tbody.innerHTML = filtStaff.map(function(e){
+    var dayLogs  = logs.filter(function(l){ return l.empId===e.id && l.date===dateFilter; });
+    var inLog    = dayLogs.find(function(l){ return l.action==='IN'; });
+    var outLog   = dayLogs.filter(function(l){ return l.action==='OUT'; }).pop();
+    var status   = !dayLogs.length ? 'Absent' : outLog ? 'Completed' : 'Present';
+    var sb       = {Absent:'badge-amber',Completed:'badge-green',Present:'badge-blue'}[status];
+    var co       = companies.find(function(c){ return c.id===e.companyId; });
+    return '<tr>'+
+      '<td><span class="chip">'+e.id+'</span></td>'+
+      '<td style="font-weight:600">'+e.name+'</td>'+
+      '<td>'+e.dept+'</td><td>'+e.grade+'</td>'+
+      '<td><span class="badge '+sb+'">'+status+'</span></td>'+
+      '<td style="font-family:monospace">'+(inLog?inLog.time.slice(0,5):'—')+'</td>'+
+      '<td style="font-family:monospace">'+(outLog?outLog.time.slice(0,5):'—')+'</td>'+
+      '<td style="font-size:11px">'+(co?co.name:'—')+'</td>'+
+      '</tr>';
+  }).join('');
+}
+
+function setAdminTab(tab) {
+  var map = {log:'Log',staff:'Staff',geo:'Geo',devices:'Devices'};
+  Object.keys(map).forEach(function(t){
+    var panel = document.getElementById('adminTab'+map[t]);
+    var btn   = document.getElementById('tab'+map[t]);
+    if (panel) panel.style.display = t===tab?'block':'none';
+    if (btn)   btn.classList.toggle('active', t===tab);
+  });
+  if (tab==='devices') renderDeviceList();
+}
+
+async function clearTodayLog() {
+  if (!confirm('Clear all sign-in records for today? This cannot be undone.')) return;
+  var today = todayStr();
+  var keep  = logs.filter(function(l){ return l.date !== today; });
+  var rem   = logs.filter(function(l){ return l.date === today; });
+  // Delete from IndexedDB
+  for (var r of rem) { await dbDelete('logs', r.id); }
+  logs = keep;
+  lsSaveAll('logs', logs);
+  renderTodayLog(); renderAdminDash();
+  showToast("Today's records cleared");
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// GEOFENCE CONFIG (ADMIN)
+// ══════════════════════════════════════════════════════════════════════
+function renderGeoConfig() {
+  var el = document.getElementById('geoConfigList');
+  if (!el) return;
+  var coOpts = companies.map(function(c){ return '<option value="'+c.id+'">'+c.name+'</option>'; }).join('');
+  var gcs = document.getElementById('geoCoSelect');
+  if (gcs) gcs.innerHTML = coOpts;
+  if (!geoZones.length) {
+    el.innerHTML = '<div style="color:var(--ts);font-size:12px;padding:8px 0">No geofence zones configured yet. Add a zone below.</div>';
+    return;
+  }
+  el.innerHTML = geoZones.map(function(z){
+    var co = companies.find(function(c){ return c.id===z.companyId; });
+    return '<div class="record-row" style="flex-wrap:wrap;gap:8px;margin-bottom:8px">' +
+      '<div style="font-size:18px">📍</div>' +
+      '<div style="flex:1;min-width:120px">' +
+        '<div style="font-weight:700">'+z.name+'</div>' +
+        '<div style="font-size:11px;color:var(--ts)">'+(co?co.name:'')+'</div>' +
+        '<div style="font-size:11px;color:var(--ts)">'+z.lat.toFixed(5)+', '+z.lng.toFixed(5)+' · Radius: '+z.radius+'m</div>' +
+        '<a href="https://maps.google.com/?q='+z.lat+','+z.lng+'" target="_blank" style="font-size:10px;color:var(--accent)">View on map ↗</a>' +
+      '</div>' +
+      '<button class="btn btn-red btn-sm" onclick="deleteGeoZone(\''+z.id+'\')">🗑 Remove</button>' +
+      '</div>';
+  }).join('');
+}
+
+async function addGeoZone() {
+  var name = (document.getElementById('geoName')||{}).value.trim();
+  var coId = (document.getElementById('geoCoSelect')||{}).value;
+  var lat  = parseFloat((document.getElementById('geoLat')||{}).value);
+  var lng  = parseFloat((document.getElementById('geoLng')||{}).value);
+  var r    = parseFloat((document.getElementById('geoRadius')||{}).value) || 100;
+  if (!name || isNaN(lat) || isNaN(lng)) { showToast('Fill zone name, latitude and longitude', 'err'); return; }
+  var zone = { id:'GEO-'+Date.now(), name:name, companyId:coId, lat:lat, lng:lng, radius:r };
+  await dbPut('geo', zone);
+  geoZones.push(zone);
+  lsSaveAll('geo', geoZones);
+  renderGeoConfig();
+  checkGeofenceAndUpdateBtn();
+  showToast('✓ Geofence zone added: ' + name, 'ok');
+}
+
+async function deleteGeoZone(id) {
+  if (!confirm('Remove this geofence zone?')) return;
+  await dbDelete('geo', id);
+  geoZones = geoZones.filter(function(z){ return z.id!==id; });
+  lsSaveAll('geo', geoZones);
+  renderGeoConfig();
+  showToast('Zone removed');
+}
+
+function toggleHighAccuracy(enabled) {
+  GPS_HIGH_ACCURACY = enabled;
+  // Restart watchPosition with new setting
+  if (geoWatchId !== null) {
+    navigator.geolocation.clearWatch(geoWatchId);
+    geoWatchId = null;
+  }
+  startGeo();
+  showToast(enabled
+    ? '📡 GPS satellite mode ON (may take 30s outdoors)'
+    : '📶 Smart location mode ON (GPS + WiFi + Cell)', 'ok');
+}
+
+function useCurrentLocation() {
+  if (!geoGranted || userLat === null) { showToast('GPS not yet available — wait for location fix', 'err'); return; }
+  var latEl = document.getElementById('geoLat');
+  var lngEl = document.getElementById('geoLng');
+  if (latEl) latEl.value = userLat.toFixed(6);
+  if (lngEl) lngEl.value = userLng.toFixed(6);
+  showToast('✓ Current GPS location filled: ' + userLat.toFixed(5) + ', ' + userLng.toFixed(5), 'ok');
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// SETUP — COMPANIES
+// ══════════════════════════════════════════════════════════════════════
+function renderCoList() {
+  var el = document.getElementById('coList');
+  if (!el) return;
+  if (!companies.length) { el.innerHTML = '<div style="color:var(--ts);font-size:12px">No companies yet. Add one below or upload a CSV.</div>'; return; }
+  el.innerHTML = companies.map(function(c){
+    var lic = licenses[c.id] || {};
+    return '<div class="record-row" style="flex-wrap:wrap;gap:8px;margin-bottom:8px">' +
+      '<div style="font-size:22px">🏢</div>' +
+      '<div style="flex:1;min-width:160px">' +
+        '<div style="font-weight:800;font-size:14px">'+c.name+'</div>' +
+        '<div style="font-size:11px;color:var(--ts)">SSM: '+c.ssmNo+' · LHDN: '+(c.lhdnNo||'—')+'</div>' +
+        '<div style="font-size:11px;color:var(--ts)">'+c.addr1+(c.state?', '+c.state:'')+'</div>' +
+        '<div style="font-size:11px;color:var(--ts)">Admin: '+c.superAdminId+' · '+c.email+'</div>' +
+      '</div>' +
+      '<div style="text-align:right">' +
+        '<span class="badge '+(lic.status==='Active'?'badge-green':'badge-amber')+'">'+(lic.plan||'No license')+'</span>' +
+        '<div style="font-size:10px;color:var(--ts);margin-top:4px">Exp: '+(lic.expiry||'—')+'</div>' +
+      '</div></div>';
+  }).join('');
+}
+
+async function addCompanyManual() {
+  var name = (document.getElementById('mcName')||{}).value.trim();
+  var ssm  = (document.getElementById('mcSSM')||{}).value.trim();
+  var saId = (document.getElementById('mcSAId')||{}).value.trim();
+  var saPin= (document.getElementById('mcSAPin')||{}).value.trim();
+  if (!name || !ssm) { showToast('Company name and SSM No are required', 'err'); return; }
+  if (!saId || !saPin) { showToast('Super Admin ID and password are required', 'err'); return; }
+  var maxId = companies.reduce(function(m,c){ return Math.max(m, parseInt((c.id||'CO000').replace('CO',''))||0); }, 0);
+  var newCo = {
+    id: 'CO'+String(maxId+1).padStart(3,'0'), name:name, ssmNo:ssm,
+    lhdnNo: (document.getElementById('mcLHDN')||{}).value.trim(),
+    phone:  (document.getElementById('mcPhone')||{}).value.trim(),
+    email:  (document.getElementById('mcEmail')||{}).value.trim(),
+    addr1:  (document.getElementById('mcAddr')||{}).value.trim(),
+    state:  (document.getElementById('mcState')||{}).value,
+    country:'Malaysia',
+    superAdminId: saId, superAdminPin: saPin,
+  };
+  await dbPut('companies', newCo);
+  companies.push(newCo);
+  lsSaveAll('companies', companies);
+  populateDropdowns(); renderCoList(); renderLicenseList(); renderGeoConfig();
+  var msg = newCo.name+' ('+newCo.id+')\nSuper Admin: '+saId+' / '+saPin;
+  if (window.confirm('✓ Company created!\n\n'+msg+'\n\nClick OK to copy credentials.')) {
+    try { navigator.clipboard.writeText('Company: '+newCo.name+' ('+newCo.id+')\nSuper Admin ID: '+saId+'\nPassword: '+saPin); } catch(e){}
+  }
+  showToast('✓ '+name+' added ('+newCo.id+')', 'ok');
+  ['mcName','mcSSM','mcLHDN','mcPhone','mcEmail','mcAddr','mcSAId','mcSAPin'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// SETUP — STAFF
+// ══════════════════════════════════════════════════════════════════════
+async function addStaffManual() {
+  var sid  = (document.getElementById('msId')||{}).value.trim().toUpperCase();
+  var name = (document.getElementById('msName')||{}).value.trim();
+  if (!sid || !name) { showToast('Staff ID and Full Name are required', 'err'); return; }
+  if (staff.find(function(e){ return e.id===sid; })) { showToast('Staff ID '+sid+' already exists', 'err'); return; }
+  var newStaff = {
+    id: sid,
+    empNo: (document.getElementById('msEmpNo')||{}).value.trim() || sid,
+    name: name,
+    preferred: (document.getElementById('msPref')||{}).value.trim(),
+    nric:  (document.getElementById('msNRIC')||{}).value.trim(),
+    dept:  (document.getElementById('msDept')||{}).value.trim(),
+    grade: (document.getElementById('msGrade')||{}).value.trim(),
+    role:  (document.getElementById('msRole')||{}).value.trim(),
+    type:  (document.getElementById('msType')||{}).value,
+    companyId: (document.getElementById('msCompany')||{}).value,
+    joinDate:  (document.getElementById('msJoin')||{}).value,
+  };
+  await dbPut('staff', newStaff);
+  staff.push(newStaff);
+  lsSaveAll('staff', staff);
+  showToast('✓ '+name+' registered ('+sid+')', 'ok');
+  ['msId','msEmpNo','msName','msPref','msNRIC','msDept','msGrade','msRole'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// SETUP — LICENSING
+// ══════════════════════════════════════════════════════════════════════
+var PLANS = {
+  starter:    { label:'Starter',    maxStaff:10,   price:'RM 49/mo'  },
+  growth:     { label:'Growth',     maxStaff:50,   price:'RM 149/mo' },
+  business:   { label:'Business',   maxStaff:200,  price:'RM 399/mo' },
+  enterprise: { label:'Enterprise', maxStaff:9999, price:'RM 799/mo' },
+};
+
+function renderLicenseList() {
+  var el = document.getElementById('licenseList');
+  if (!el) return;
+  if (!companies.length) { el.innerHTML = '<div style="color:var(--ts);font-size:12px">No companies yet.</div>'; return; }
+  el.innerHTML = companies.map(function(c){
+    var lic  = licenses[c.id] || {};
+    var plan = PLANS[lic.plan] || {};
+    var exp  = lic.expiry ? new Date(lic.expiry) : null;
+    var expired = exp && exp < new Date();
+    return '<div class="record-row" style="flex-wrap:wrap;gap:8px;margin-bottom:8px">' +
+      '<div style="font-size:22px">🔑</div>' +
+      '<div style="flex:1;min-width:140px">' +
+        '<div style="font-weight:700">'+c.name+'</div>' +
+        '<div style="font-size:11px;color:var(--ts)">'+(plan.label||'No plan')+' · '+(plan.maxStaff||'—')+' staff · '+(plan.price||'—')+'</div>' +
+        '<div style="font-size:10px;color:var(--tm)">Key: '+(lic.key||'Not assigned')+'</div>' +
+      '</div>' +
+      '<span class="badge '+(expired?'badge-red':lic.status==='Active'?'badge-green':'badge-amber')+'">'+(expired?'Expired':lic.status||'None')+'</span>' +
+      '</div>';
+  }).join('');
+}
+
+async function assignLicense() {
+  var coId   = (document.getElementById('licCoSelect')||{}).value;
+  var plan   = (document.getElementById('licPlan')||{}).value;
+  var expiry = (document.getElementById('licExpiry')||{}).value || '2027-12-31';
+  var key    = (document.getElementById('licKey')||{}).value.trim() || 'HRSIGNIN-'+coId+'-'+new Date().getFullYear();
+  var lic    = { id:'LIC-'+coId, companyId:coId, plan:plan, maxStaff:PLANS[plan].maxStaff, status:'Active', expiry:expiry, key:key };
+  await dbPut('licenses', lic);
+  licenses[coId] = lic;
+  lsSaveAll('licenses', Object.values(licenses));
+  renderLicenseList();
+  showToast('✓ License assigned: '+(PLANS[plan].label)+' for '+(companies.find(function(c){return c.id===coId;})||{}).name, 'ok');
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// CSV IMPORT
+// ══════════════════════════════════════════════════════════════════════
+function handleDrop(event, type) {
+  event.preventDefault();
+  var id = type==='company'?'coDropZone':'stDropZone';
+  var el = document.getElementById(id);
+  if (el) el.classList.remove('drag');
+  var file = event.dataTransfer.files[0];
+  if (file) processCSV(file, type);
+}
+function handleFile(input, type) {
+  if (input.files[0]) processCSV(input.files[0], type);
+}
+
+function parseCSV(text) {
+  var lines = text.split(/\r?\n/).filter(function(l){ return l.trim() && !l.trim().startsWith('#'); });
+  if (!lines.length) return [];
+  var headers = lines[0].split(',').map(function(h){ return h.trim(); });
+  return lines.slice(1).map(function(line){
+    var vals = line.split(',');
+    var obj  = {};
+    headers.forEach(function(h,i){ obj[h] = (vals[i]||'').trim(); });
+    return obj;
+  }).filter(function(r){ return Object.values(r).some(function(v){ return v; }); });
+}
+
+async function processCSV(file, type) {
+  var reader = new FileReader();
+  reader.onload = async function(e) {
+    var rows = parseCSV(e.target.result);
+    if (!rows.length) { showToast('No data in CSV', 'err'); return; }
+    var added=0, updated=0;
+    if (type === 'company') {
+      for (var r of rows) {
+        var name = r['Company Name']||r['name']; var ssm = r['SSM No']||r['ssmNo'];
+        if (!name) continue;
+        var ex = companies.find(function(c){ return c.ssmNo===ssm; });
+        var maxId = companies.reduce(function(m,c){ return Math.max(m, parseInt((c.id||'CO000').replace('CO',''))||0); }, 0);
+        var co = ex || { id:'CO'+String(maxId+1).padStart(3,'0') };
+        Object.assign(co, { name:name, ssmNo:ssm||'', lhdnNo:r['LHDN No']||co.lhdnNo||'', phone:r['Phone']||co.phone||'', email:r['Email']||co.email||'', addr1:r['Address']||co.addr1||'', state:r['State']||co.state||'', country:'Malaysia', superAdminId:r['Super Admin ID']||co.superAdminId||'SA001', superAdminPin:r['Super Admin Password']||co.superAdminPin||'Admin@2025' });
+        await dbPut('companies', co);
+        if (!ex) { companies.push(co); added++; } else updated++;
+      }
+      lsSaveAll('companies', companies);
+      populateDropdowns(); renderCoList(); renderLicenseList();
+    } else {
+      for (var r of rows) {
+        var sid = (r['Employee ID']||r['id']||'').toUpperCase(); var name = r['Full Name']||r['name'];
+        if (!sid || !name) continue;
+        var ex = staff.find(function(e){ return e.id===sid; });
+        var st = ex || { id:sid };
+        Object.assign(st, { empNo:r['Employee No']||r['empNo']||st.empNo||sid, name:name, preferred:r['Preferred Name']||st.preferred||'', nric:r['NRIC']||st.nric||'', dept:r['Department']||r['dept']||st.dept||'', grade:r['Grade']||r['grade']||st.grade||'', role:r['Role']||r['role']||st.role||'', type:r['Employment Type']||r['type']||st.type||'Permanent', companyId:r['Company ID']||r['companyId']||st.companyId||(companies[0]&&companies[0].id)||'CO001', joinDate:r['Join Date']||r['joinDate']||st.joinDate||'' });
+        await dbPut('staff', st);
+        if (!ex) { staff.push(st); added++; } else updated++;
+      }
+      lsSaveAll('staff', staff);
+    }
+    showToast('✓ Imported: '+added+' added, '+updated+' updated', 'ok');
+  };
+  reader.readAsText(file);
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// TEMPLATE DOWNLOADS
+// ══════════════════════════════════════════════════════════════════════
+function downloadCSVFile(filename, content) {
+  var blob = new Blob([content],{type:'text/csv;charset=utf-8'});
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a'); a.href=url; a.download=filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+}
+
+function downloadTemplate(type) {
+  if (type==='company') {
+    downloadCSVFile('HRSignIn_Company_Import_Template.csv',
+      '# HRCloud Sign-In — Company Template. Delete # rows before uploading.\n' +
+      'Company Name,SSM No,LHDN No,EPF No,SOCSO No,Phone,Email,Address,City,Postcode,State,Country,Super Admin ID,Super Admin Password\n' +
+      'TechCorp Sdn. Bhd.,202001012345,C 1234567890,EP 1234567,SO 1234567,03-22345678,hr@techcorp.com.my,"Level 18, Menara TechCorp",Kuala Lumpur,50450,W.P. Kuala Lumpur,Malaysia,SA001,Admin@TC2025\n');
+  } else {
+    downloadCSVFile('HRSignIn_Staff_Import_Template.csv',
+      '# HRCloud Sign-In — Staff Template. Delete # rows before uploading.\n' +
+      'Employee ID,Employee No,Full Name,Preferred Name,NRIC,Department,Grade,Role,Employment Type,Company ID,Join Date\n' +
+      'E001,EMP001,Ahmad Farid bin Azman,Farid,850101-14-1234,Finance,G4,HR Manager,Permanent,CO001,2018-03-15\n' +
+      'E002,EMP002,Siti Nuraini binti Hassan,Ain,900522-10-5678,HR,G3,HR Executive,Permanent,CO001,2019-06-01\n');
+  }
+  showToast('Template downloaded', 'ok');
+}
+
+function showTemplatePreview(type) {
+  var modal = document.getElementById('templateModal');
+  var title = document.getElementById('tplModalTitle');
+  var body  = document.getElementById('tplModalContent');
+  if (!modal) return;
+  if (type==='company') {
+    title.textContent = '🏢 Company CSV Format';
+    body.innerHTML = '<p style="font-size:12px;color:var(--ts);margin-bottom:12px">13 columns — one row per company</p>' +
+      '<div style="overflow-x:auto"><table class="tbl"><thead><tr>' +
+      ['Company Name *','SSM No *','LHDN No','EPF No','SOCSO No','Phone','Email','Address','City','Postcode','State','Country','Super Admin ID *','Super Admin Password *'].map(function(h){ return '<th>'+h+'</th>'; }).join('') +
+      '</tr></thead><tbody><tr>' +
+      ['TechCorp Sdn. Bhd.','202001012345','C 1234567890','EP 1234567','SO 1234567','03-22345678','hr@co.my','Level 18, Jalan ABC','KL','50450','W.P. KL','Malaysia','SA001','Admin@2025'].map(function(v){ return '<td style="font-size:10px">'+v+'</td>'; }).join('') +
+      '</tr></tbody></table></div>';
+  } else {
+    title.textContent = '👥 Staff CSV Format';
+    body.innerHTML = '<p style="font-size:12px;color:var(--ts);margin-bottom:12px">11 columns — one row per staff member</p>' +
+      '<div style="overflow-x:auto"><table class="tbl"><thead><tr>' +
+      ['Employee ID *','Employee No','Full Name *','Preferred Name','NRIC','Department','Grade','Role','Employment Type','Company ID *','Join Date'].map(function(h){ return '<th>'+h+'</th>'; }).join('') +
+      '</tr></thead><tbody><tr>' +
+      ['E001','EMP001','Ahmad Farid','Farid','850101-14-1234','Finance','G4','HR Manager','Permanent','CO001','2018-03-15'].map(function(v){ return '<td style="font-size:10px">'+v+'</td>'; }).join('') +
+      '</tr></tbody></table></div><p style="margin-top:12px;font-size:11px;color:var(--amber)">⚠ Employee ID must match HRCloud exactly for attendance sync.</p>';
+  }
+  modal.style.display = 'block';
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// HRCLOUD EXPORT
+// ══════════════════════════════════════════════════════════════════════
+function exportHRCloudAttendance() {
+  var instr = '# HRCloud Attendance Import — upload via HRCloud → Import → Attendance\n';
+  var hdr   = 'Employee ID,Employee Name,Date (YYYY-MM-DD),Clock In (HH:MM),Clock Out (HH:MM),Break Start (HH:MM),Break End (HH:MM),Total Hours,Overtime Hours,Shift Code (MORNING/AFTERNOON/NIGHT/FLEXIBLE/OFF),Status (Present/Absent/Late/Half-Day/Leave/Public Holiday),Late (minutes),Work Location,Remarks\n';
+  var grouped = {};
+  logs.forEach(function(l){
+    var k = l.empId+'|'+l.date;
+    if (!grouped[k]) grouped[k] = { l:l, inT:null, outT:null };
+    if (l.action==='IN')  grouped[k].inT  = l;
+    if (l.action==='OUT') grouped[k].outT = l;
+  });
+  var rows = Object.values(grouped).map(function(g){
+    var inT  = g.inT  ? g.inT.time.slice(0,5)  : '';
+    var outT = g.outT ? g.outT.time.slice(0,5) : '';
+    var hrs  = '';
+    if (inT && outT) {
+      var i  = parseInt(inT.split(':')[0])*60  + parseInt(inT.split(':')[1]);
+      var o  = parseInt(outT.split(':')[0])*60 + parseInt(outT.split(':')[1]);
+      hrs = ((o - i - 60) / 60).toFixed(1);
+    }
+    var geoNote = g.inT ? (g.inT.geoOk?'Geo verified':'Geo not verified')+' ('+g.inT.lat.toFixed(4)+','+g.inT.lng.toFixed(4)+')' : '';
+    return [g.l.empId, g.l.name, g.l.date, inT, outT, inT?'13:00':'', outT?'14:00':'', hrs||'', '0', 'MORNING', inT?'Present':'Absent', '0', 'Office', geoNote].join(',');
+  });
+  downloadCSVFile('HRCloud_Attendance_Export_'+todayStr()+'.csv', instr+hdr+rows.join('\n'));
+  showToast('✓ HRCloud attendance CSV exported', 'ok');
+}
+
+function exportHRCloudStaff() {
+  var instr = '# HRCloud Employee Import — upload via HRCloud → Import → Employees\n';
+  var hdr   = 'Employee ID,Employee No,Full Name,Preferred Name,NRIC / IC No,Department,Grade,Role,Employment Type (Permanent/Contract/Part-Time/Internship/Probation),Join Date (YYYY-MM-DD),Status (Active/Probation/Resigned/Terminated),Notes\n';
+  var rows  = staff.map(function(e){ return [e.id,e.empNo||'',e.name,e.preferred||'',e.nric||'',e.dept||'',e.grade||'',e.role||'',e.type||'Permanent',e.joinDate||'','Active',''].join(','); });
+  downloadCSVFile('HRCloud_Staff_Export_'+todayStr()+'.csv', instr+hdr+rows.join('\n'));
+  showToast('✓ HRCloud staff CSV exported', 'ok');
+}
+
+function exportAttendanceCSV() {
+  var hdr  = 'ID,Employee ID,Employee No,Name,Department,Date,Time,Timestamp,Action,Latitude,Longitude,Accuracy(m),Location Source,Geofence OK,Geo Note,Override,Company\n';
+  var rows = logs.map(function(l){
+    var co = companies.find(function(c){ return c.id===l.companyId; });
+    return [l.id,l.empId,l.empNo||'',l.name,l.dept,l.date,l.time,l.timestamp||'',l.action,l.lat||'',l.lng||'',l.accuracy||'',l.locationSrc||'Unknown',l.geoOk?'YES':'NO','"'+(l.geoNote||'').replace(/"/g,"'")+'"',l.override?'YES':'NO',(co?co.name:'')].join(',');
+  });
+  downloadCSVFile('HRSignIn_FullExport_'+todayStr()+'.csv', hdr+rows.join('\n'));
+  showToast('✓ Full attendance export downloaded', 'ok');
+}
+
+function exportHRCloudCSV() { exportHRCloudAttendance(); }
+
+// ══════════════════════════════════════════════════════════════════════
+// SETUP TAB SWITCHING
+// ══════════════════════════════════════════════════════════════════════
+function setSetupTab(tab) {
+  var map = { company:'Company', staff:'Staff', license:'License', export:'Export' };
+  var idMap = { company:'tabSCo', staff:'tabSSt', license:'tabSLic', export:'tabSExp' };
+  Object.keys(map).forEach(function(t){
+    var panel = document.getElementById('setupTab'+map[t]);
+    if (panel) panel.style.display = t===tab?'block':'none';
+    var btn = document.getElementById(idMap[t]);
+    if (btn) btn.classList.toggle('active', t===tab);
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// PAGE NAVIGATION
+// ══════════════════════════════════════════════════════════════════════
+function showPage(page) {
+  // Protect admin and setup pages
+  if ((page==='admin' || page==='setup') && !adminSession) {
+    pendingPage = page;
+    showAdminLoginScreen();
+    return;
+  }
+  ['signin','admin','setup'].forEach(function(p){
+    var el = document.getElementById('page'+p.charAt(0).toUpperCase()+p.slice(1));
+    if (el) el.style.display = p===page?'block':'none';
+  });
+  document.querySelectorAll('.page-tab').forEach(function(el,i){
+    el.classList.toggle('active', ['signin','admin','setup'][i]===page);
+  });
+  if (page==='admin') renderAdminDash();
+  if (page==='setup') { renderCoList(); renderLicenseList(); }
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════════════════════════════════
+function showToast(msg, type) {
+  var wrap = document.getElementById('toastWrap');
+  if (!wrap) return;
+  var el = document.createElement('div');
+  el.className = 'toast' + (type?' '+type:'');
+  el.textContent = msg;
+  wrap.appendChild(el);
+  setTimeout(function(){ el.remove(); }, 3500);
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// ADMIN AUTHENTICATION & SETUP WIZARD
+// ══════════════════════════════════════════════════════════════════════
+
+var ADMIN_SESSION_KEY = 'hrsignin_admin_session';
+var adminSession = null;  // { id, role, companyId, name, expiresAt }
+var selectedLoginRole = 'superadmin';
+
+// ── Check admin session on boot ────────────────────────────────────────
+function checkAdminSession() {
+  try {
+    var saved = localStorage.getItem(ADMIN_SESSION_KEY);
+    if (!saved) return;
+    var sess = JSON.parse(saved);
+    if (!sess || !sess.expiresAt) return;
+    if (new Date(sess.expiresAt) < new Date()) {
+      localStorage.removeItem(ADMIN_SESSION_KEY);
+      return;
+    }
+    adminSession = sess;
+    applyAdminSession(sess);
+  } catch(e) {}
+}
+
+function applyAdminSession(sess) {
+  adminSession = sess;
+  // Show session bar
+  var bar = document.getElementById('adminSessionBar');
+  if (bar) bar.classList.add('visible');
+  var rn = document.getElementById('sessionRoleName');
+  if (rn) rn.textContent = sess.name || sess.id;
+  var rb = document.getElementById('sessionRoleBadge');
+  if (rb) rb.textContent = sess.role === 'platform_admin' ? 'Platform Admin' : 'Company Admin';
+  // Populate company switcher
+  populateAdminCoSwitcher(sess);
+  // Update tab labels to show unlocked
+  var tabA = document.getElementById('tabBtnAdmin');
+  if (tabA) tabA.textContent = '📊 Admin';
+  var tabS = document.getElementById('tabBtnSetup');
+  if (tabS) tabS.textContent = '⚙️ Setup';
+}
+
+function populateAdminCoSwitcher(sess) {
+  var wrap = document.getElementById('coSwitcherWrap');
+  var sel  = document.getElementById('adminCoSwitcher');
+  if (!sel) return;
+  if (sess.role === 'platform_admin') {
+    // Platform admin can switch to any company
+    sel.innerHTML = '<option value="">All Companies</option>' +
+      companies.map(function(c){ return '<option value="'+c.id+'"'+(c.id===activeCoId?' selected':'')+'>'+c.name+'</option>'; }).join('');
+    if (wrap) wrap.style.display = 'flex';
+  } else {
+    // Company admin — locked to their company
+    sel.innerHTML = '<option value="'+sess.companyId+'">'+(companies.find(function(c){return c.id===sess.companyId;})||{}).name+'</option>';
+    if (wrap) wrap.style.display = 'flex';
+  }
+}
+
+function switchActiveCompany(coId) {
+  activeCoId = coId || (companies.length ? companies[0].id : null);
+  activeCo   = companies.find(function(c){ return c.id===activeCoId; }) || companies[0] || null;
+  updateClock();
+  renderTodayLog();
+  renderAdminDash();
+  renderCoList();
+  populateDropdowns();
+  checkGeofence();
+  showToast('Switched to: ' + (activeCo ? activeCo.name : 'All'), 'ok');
+}
+
+// ── Admin Login Tab Selection ─────────────────────────────────────────
+function selectAdminRole(role) {
+  selectedLoginRole = role;
+  document.getElementById('roleTabSA').classList.toggle('active', role==='superadmin');
+  document.getElementById('roleTabPA').classList.toggle('active', role==='platform');
+  var coField = document.getElementById('loginCoField');
+  if (coField) coField.style.display = role==='superadmin' ? 'block' : 'none';
+  var idInput = document.getElementById('adminLoginId');
+  if (idInput) idInput.placeholder = role==='platform' ? 'PA001' : 'SA001';
+}
+
+// ── Open Admin Login ──────────────────────────────────────────────────
+function requireAdminThen(page) {
+  if (adminSession) {
+    // Already logged in — go straight to the page
+    // Check role permissions
+    if (page==='setup' && adminSession.role!=='platform_admin' && adminSession.role!=='super_admin') {
+      showToast('Setup requires Company Admin or Platform Admin access', 'err');
+      return;
+    }
+    showPage(page);
+    return;
+  }
+  // Not logged in — show login screen
+  pendingPage = page;
+  showAdminLoginScreen();
+}
+
+var pendingPage = 'admin';
+
+function showAdminLoginScreen() {
+  // Populate company dropdown
+  var sel = document.getElementById('loginCoSelect');
+  if (sel) {
+    sel.innerHTML = '<option value="">— Select company —</option>' +
+      companies.map(function(c){ return '<option value="'+c.id+'">'+c.name+'</option>'; }).join('');
+  }
+  // Show first-time hint if no companies
+  var hint = document.getElementById('firstTimeHint');
+  if (hint) hint.style.display = companies.length === 0 ? 'block' : 'none';
+
+  var screen = document.getElementById('adminLoginScreen');
+  if (screen) screen.style.display = 'flex';
+  setTimeout(function(){
+    var inp = document.getElementById('adminLoginId');
+    if (inp) inp.focus();
+  }, 200);
+}
+
+function hideAdminLoginScreen() {
+  var screen = document.getElementById('adminLoginScreen');
+  if (screen) screen.style.display = 'none';
+}
+
+// ── Do Admin Login ────────────────────────────────────────────────────
+async function doAdminLogin() {
+  var id  = (document.getElementById('adminLoginId')||{}).value.trim();
+  var pw  = (document.getElementById('adminLoginPw')||{}).value;
+  var coId= (document.getElementById('loginCoSelect')||{}).value;
+  var errEl = document.getElementById('adminLoginErr');
+
+  function showErr(msg) {
+    if (errEl) { errEl.style.display='block'; errEl.textContent=msg; }
+  }
+  if (errEl) errEl.style.display = 'none';
+
+  if (!id || !pw) { showErr('Please enter your Admin ID and password.'); return; }
+
+  if (selectedLoginRole === 'platform') {
+    // Platform admin — check against platform_staff in DB (or hardcoded PA001 for demo)
+    var matched = null;
+    // Check demo hardcoded
+    if (id === 'PA001' && pw === 'HRCLOUD2025') {
+      matched = { id:'PA001', role:'platform_admin', name:'Platform Admin' };
+    }
+    // Also check DB
+    if (!matched) {
+      var allPA = (await dbGetAll('staff').catch(function(){ return []; }));
+      // Check platform_staff stored in DB — for now use localStorage fallback
+      var paList = JSON.parse(localStorage.getItem('hrsignin_platform_staff')||'[]');
+      var pa = paList.find(function(p){ return p.id===id && p.password===pw; });
+      if (pa) matched = { id:pa.id, role:'platform_admin', name:pa.name||pa.id };
+    }
+    if (!matched) { showErr('Invalid Platform Admin credentials.'); return; }
+    var sess = {
+      id: matched.id, role:'platform_admin', name: matched.name,
+      companyId: null,
+      expiresAt: new Date(Date.now() + 8*3600*1000).toISOString()
+    };
+    localStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify(sess));
+    applyAdminSession(sess);
+    hideAdminLoginScreen();
+    showPage(pendingPage || 'admin');
+    showToast('Signed in as Platform Admin', 'ok');
+
+  } else {
+    // Super admin — check against companies
+    if (!coId) { showErr('Please select a company.'); return; }
+    var co = companies.find(function(c){ return c.id===coId; });
+    if (!co) { showErr('Company not found.'); return; }
+    if (co.superAdminId !== id) { showErr('Admin ID does not match this company.'); return; }
+    if (co.superAdminPin !== pw) { showErr('Incorrect password. Please try again.'); return; }
+
+    var sess = {
+      id: id, role:'super_admin', name: id + ' (' + co.name + ')',
+      companyId: co.id, companyName: co.name,
+      expiresAt: new Date(Date.now() + 8*3600*1000).toISOString()
+    };
+    localStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify(sess));
+    // Lock active company to this admin's company
+    activeCoId = co.id;
+    activeCo   = co;
+    updateClock();
+    applyAdminSession(sess);
+    hideAdminLoginScreen();
+    showPage(pendingPage || 'admin');
+    showToast('Signed in as ' + id + ' - ' + co.name, 'ok');
+  }
+
+  // Clear inputs
+  var pw_inp = document.getElementById('adminLoginPw');
+  if (pw_inp) pw_inp.value = '';
+}
+
+// ── Admin Logout ──────────────────────────────────────────────────────
+function doAdminLogout() {
+  if (!confirm('Sign out of Admin panel?')) return;
+  localStorage.removeItem(ADMIN_SESSION_KEY);
+  adminSession = null;
+  var bar = document.getElementById('adminSessionBar');
+  if (bar) bar.classList.remove('visible');
+  var tabA = document.getElementById('tabBtnAdmin');
+  if (tabA) tabA.textContent = '🔐 Admin';
+  var tabS = document.getElementById('tabBtnSetup');
+  if (tabS) tabS.textContent = '⚙️ Setup';
+  showPage('signin');
+  showToast('Signed out of admin panel');
+}
+
+// ── Setup Wizard ──────────────────────────────────────────────────────
+var wizardCurrentStep = 1;
+
+function showSetupWizard() {
+  hideAdminLoginScreen();
+  var wiz = document.getElementById('setupWizard');
+  if (wiz) wiz.style.display = 'flex';
+  wizardGoTo(1);
+}
+
+function wizardGoTo(step) {
+  wizardCurrentStep = step;
+  [1,2,3].forEach(function(s){
+    var el = document.getElementById('wizardStep'+s);
+    if (el) el.style.display = s===step ? 'block' : 'none';
+    var bar = document.getElementById('wStep'+s);
+    if (bar) {
+      bar.classList.remove('done','active');
+      if (s < step) bar.classList.add('done');
+      else if (s===step) bar.classList.add('active');
+    }
+  });
+}
+
+function wizardNext(step) {
+  if (step === 2) {
+    // Validate step 1
+    var name = (document.getElementById('wCoName')||{}).value.trim();
+    var ssm  = (document.getElementById('wCoSSM')||{}).value.trim();
+    if (!name || !ssm) { showToast('Company name and SSM number are required', 'err'); return; }
+  }
+  if (step === 3) {
+    // Validate step 2
+    var adminId = (document.getElementById('wAdminId')||{}).value.trim();
+    var pw1     = (document.getElementById('wAdminPw')||{}).value;
+    var pw2     = (document.getElementById('wAdminPw2')||{}).value;
+    if (!adminId) { showToast('Admin ID is required', 'err'); return; }
+    if (pw1.length < 8) { showToast('Password must be at least 8 characters', 'err'); return; }
+    if (pw1 !== pw2)    { showToast('Passwords do not match', 'err'); return; }
+  }
+  wizardGoTo(step);
+}
+
+function wizardUseLocation() {
+  if (!geoGranted || userLat===null) { showToast('GPS not yet available', 'err'); return; }
+  var latEl = document.getElementById('wGeoLat');
+  var lngEl = document.getElementById('wGeoLng');
+  if (latEl) latEl.value = userLat.toFixed(6);
+  if (lngEl) lngEl.value = userLng.toFixed(6);
+  showToast('Current GPS location filled', 'ok');
+}
+
+async function wizardFinish(addGeo) {
+  var name    = (document.getElementById('wCoName')||{}).value.trim();
+  var ssm     = (document.getElementById('wCoSSM')||{}).value.trim();
+  var lhdn    = (document.getElementById('wCoLHDN')||{}).value.trim();
+  var phone   = (document.getElementById('wCoPhone')||{}).value.trim();
+  var email   = (document.getElementById('wCoEmail')||{}).value.trim();
+  var state   = (document.getElementById('wCoState')||{}).value;
+  var addr    = (document.getElementById('wCoAddr')||{}).value.trim();
+  var adminId = (document.getElementById('wAdminId')||{}).value.trim();
+  var adminPw = (document.getElementById('wAdminPw')||{}).value;
+
+  // Create company
+  var maxId = companies.reduce(function(m,c){ return Math.max(m, parseInt((c.id||'CO000').replace('CO',''))||0); }, 0);
+  var newCo = {
+    id: 'CO'+String(maxId+1).padStart(3,'0'),
+    name: name, ssmNo: ssm, lhdnNo: lhdn, phone: phone,
+    email: email, addr1: addr, state: state, country: 'Malaysia',
+    superAdminId: adminId, superAdminPin: adminPw,
+  };
+  await dbPut('companies', newCo);
+  companies.push(newCo);
+  lsSaveAll('companies', companies);
+  activeCoId = newCo.id;
+  activeCo   = newCo;
+
+  // Add geofence if requested
+  if (addGeo) {
+    var geoName = (document.getElementById('wGeoName')||{}).value.trim() || 'Head Office';
+    var lat  = parseFloat((document.getElementById('wGeoLat')||{}).value);
+    var lng  = parseFloat((document.getElementById('wGeoLng')||{}).value);
+    var r    = parseFloat((document.getElementById('wGeoRadius')||{}).value) || 100;
+    if (!isNaN(lat) && !isNaN(lng)) {
+      var zone = { id:'GEO-'+Date.now(), name:geoName, companyId:newCo.id, lat:lat, lng:lng, radius:r };
+      await dbPut('geo', zone);
+      geoZones.push(zone);
+      lsSaveAll('geo', geoZones);
+    }
+  }
+
+  // Create admin session
+  var sess = {
+    id: adminId, role:'super_admin',
+    name: adminId + ' (' + name + ')',
+    companyId: newCo.id, companyName: name,
+    expiresAt: new Date(Date.now() + 8*3600*1000).toISOString()
+  };
+  localStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify(sess));
+
+  // Hide wizard
+  var wiz = document.getElementById('setupWizard');
+  if (wiz) wiz.style.display = 'none';
+
+  // Refresh everything
+  populateDropdowns();
+  populateAdminCoSwitcher(sess);
+  applyAdminSession(sess);
+  updateClock();
+  renderCoList();
+  renderLicenseList();
+  renderGeoConfig();
+
+  showToast('Setup complete! Company created: ' + name, 'ok');
+  showPage('setup');
+
+  // Show credential summary
+  setTimeout(function(){
+    var credMsg = 'Setup complete!\n\nCompany: ' + name + ' (' + newCo.id + ')\nAdmin ID: ' + adminId + '\nPassword: ' + adminPw + '\n\nClick OK to copy credentials.';
+    if (window.confirm(credMsg)) {
+      try { navigator.clipboard.writeText(
+        'HRCloud Sign-In Admin Credentials\n' +
+        'Company: ' + name + ' (' + newCo.id + ')\n' +
+        'Admin ID: ' + adminId + '\n' +
+        'Password: ' + adminPw
+      ); } catch(e) {}
+    }
+  }, 500);
+}
+
+// ── Run admin session check in boot ───────────────────────────────────
+// Called after loadAllData completes
+
+// ══════════════════════════════════════════════════════════════════════
+// DEVICE BINDING — One phone = one staff member
+// ══════════════════════════════════════════════════════════════════════
+
+var DEVICE_TOKEN_KEY  = 'hrsignin_device_token';
+var DEVICE_BOUND_KEY  = 'hrsignin_device_bound_empid';
+var DEVICE_BIND_STORE = 'deviceBindings';
+
+// Generate a unique device token if none exists
+function getOrCreateDeviceToken() {
+  var token = localStorage.getItem(DEVICE_TOKEN_KEY);
+  if (!token) {
+    // Combine random bytes + timestamp for uniqueness
+    var rand  = Array.from(crypto.getRandomValues(new Uint8Array(12)))
+                  .map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
+    token = 'DT-' + rand + '-' + Date.now().toString(36);
+    localStorage.setItem(DEVICE_TOKEN_KEY, token);
+  }
+  return token;
+}
+
+// Get the Staff ID bound to this device (null if unregistered)
+function getBoundEmpId() {
+  return localStorage.getItem(DEVICE_BOUND_KEY) || null;
+}
+
+// Save binding locally
+function saveLocalBinding(empId, token) {
+  localStorage.setItem(DEVICE_BOUND_KEY, empId);
+  localStorage.setItem(DEVICE_TOKEN_KEY, token);
+}
+
+// Save binding to IndexedDB (shared registry)
+async function saveBindingToDB(empId, token) {
+  var emp = staff.find(function(e){ return e.id === empId; });
+  var binding = {
+    id:         token,
+    deviceToken:token,
+    empId:      empId,
+    empName:    emp ? emp.name    : empId,
+    empNo:      emp ? emp.empNo   : empId,
+    dept:       emp ? emp.dept    : '',
+    companyId:  emp ? emp.companyId : activeCoId,
+    boundOn:    new Date().toISOString(),
+    boundBy:    'self',
+    active:     true,
+    lastUsed:   new Date().toISOString(),
+  };
+  await dbPut(DEVICE_BIND_STORE, binding);
+  // Update LS fallback
+  var all = JSON.parse(localStorage.getItem('hrsignin_deviceBindings')||'[]');
+  var idx = all.findIndex(function(b){ return b.id===token; });
+  if (idx>=0) all[idx]=binding; else all.push(binding);
+  localStorage.setItem('hrsignin_deviceBindings', JSON.stringify(all));
+  return binding;
+}
+
+// Get all bindings from DB
+async function getAllBindings() {
+  try {
+    if (db) {
+      // Create store if not exists (upgrade needed for older DB versions)
+      var tx  = db.transaction(DEVICE_BIND_STORE, 'readonly');
+      var req = tx.objectStore(DEVICE_BIND_STORE).getAll();
+      return await new Promise(function(res){ req.onsuccess=function(){ res(req.result||[]); }; req.onerror=function(){ res([]); }; });
+    }
+  } catch(e) {}
+  return JSON.parse(localStorage.getItem('hrsignin_deviceBindings')||'[]');
+}
+
+// Check if this device is bound to a specific empId
+async function getDeviceBinding(token) {
+  var all = await getAllBindings();
+  return all.find(function(b){ return b.deviceToken===token && b.active; }) || null;
+}
+
+// ── Boot: check if device is registered ───────────────────────────────
+async function checkDeviceBinding() {
+  // Ensure deviceBindings store exists
+  await ensureDeviceStore();
+
+  var token     = getOrCreateDeviceToken();
+  var localEmpId= getBoundEmpId();
+
+  // Show device ID in registration screen
+  var did = document.getElementById('deviceIdDisplay');
+  if (did) did.textContent = token;
+
+  if (!localEmpId) {
+    // No local binding — show registration screen
+    showDeviceRegScreen(token);
+    return false;
+  }
+
+  // Verify against DB binding
+  var binding = await getDeviceBinding(token);
+  if (!binding) {
+    // Local binding exists but not in DB — recreate in DB
+    await saveBindingToDB(localEmpId, token);
+    binding = { empId: localEmpId, empName: (staff.find(function(e){return e.id===localEmpId;})||{}).name || localEmpId };
+  }
+
+  // Device is bound — lock UI to this staff member
+  activateDeviceBound(binding, token);
+  return true;
+}
+
+async function ensureDeviceStore() {
+  // Store is always created in openDB (DB_VERSION 3+) — nothing to do
+  return;
+}
+
+// ── Show registration screen ───────────────────────────────────────────
+function showDeviceRegScreen(token) {
+  var screen = document.getElementById('deviceRegScreen');
+  if (screen) screen.style.display = 'flex';
+  var inp = document.getElementById('deviceRegInput');
+  if (inp) setTimeout(function(){ inp.focus(); }, 300);
+}
+
+// ── Confirm device registration ────────────────────────────────────────
+async function confirmDeviceReg() {
+  var inp   = document.getElementById('deviceRegInput');
+  var empId = inp ? inp.value.trim().toUpperCase() : '';
+  if (!empId) { showToast('Enter your Staff ID to register', 'err'); return; }
+
+  var emp = staff.find(function(e){ return e.id===empId || e.empNo===empId; });
+  if (!emp) {
+    showToast('⚠ Staff ID "'+empId+'" not found. Ask your admin to add you first.', 'err');
+    return;
+  }
+
+  // Check if this Staff ID is already bound to a different device
+  var all = await getAllBindings();
+  var existing = all.find(function(b){ return b.empId===emp.id && b.active; });
+  if (existing && existing.deviceToken !== getOrCreateDeviceToken()) {
+    // Already bound to another device
+    var proceed = confirm(
+      '⚠ ' + emp.name + ' is already registered on another device.\n\n' +
+      'If you have a new phone, click OK to transfer the registration here.\n' +
+      'The old device will be deactivated.\n\n' +
+      'If this is not you, click Cancel and contact your admin.'
+    );
+    if (!proceed) return;
+    // Deactivate old binding
+    existing.active = false;
+    await dbPut(DEVICE_BIND_STORE, existing);
+  }
+
+  var token   = getOrCreateDeviceToken();
+  var binding = await saveBindingToDB(emp.id, token);
+  saveLocalBinding(emp.id, token);
+
+  // Hide registration screen
+  var screen = document.getElementById('deviceRegScreen');
+  if (screen) screen.style.display = 'none';
+
+  activateDeviceBound(binding, token);
+  showToast('✓ Device registered to ' + emp.name, 'ok');
+}
+
+// ── Lock the UI to the bound staff member ─────────────────────────────
+function activateDeviceBound(binding, token) {
+  var empId = binding.empId;
+  var emp   = staff.find(function(e){ return e.id===empId; });
+  var name  = binding.empName || (emp ? emp.name : empId);
+
+  // Show bound banner
+  var banner = document.getElementById('boundBanner');
+  if (banner) banner.style.display = 'flex';
+  var bn = document.getElementById('boundStaffName');
+  if (bn) bn.textContent = emp ? (emp.preferred || name.split(' ')[0]) : name;
+  var bei = document.getElementById('boundEmpId');
+  if (bei) bei.textContent = empId;
+
+  // Change card title
+  var ct = document.getElementById('signinCardTitle');
+  if (ct) ct.textContent = '🔐 ' + (emp ? (emp.preferred || name.split(' ')[0]) : name) + ' — Clock In / Out';
+  var cs = document.getElementById('signinCardSub');
+  if (cs) cs.textContent = 'This device is locked to your account. Tap the button to clock in or out.';
+
+  // Pre-fill staff ID and LOCK the input
+  var inp = document.getElementById('staffIdInput');
+  if (inp) {
+    inp.value    = empId;
+    inp.readOnly = true;
+    inp.style.background = '#e8f5e9';
+    inp.style.color      = 'var(--green)';
+    inp.style.fontWeight = '900';
+    inp.style.letterSpacing = '4px';
+    inp.style.cursor     = 'not-allowed';
+    inp.title = 'This device is registered to ' + name;
+  }
+
+  // Lock the numpad — hide it or disable it
+  var numpad = document.getElementById('numpad');
+  if (numpad) {
+    numpad.style.display = 'none'; // hide numpad since ID is fixed
+  }
+
+  // Set currentStaffId
+  currentStaffId = empId;
+  updateStaffPreview();
+  unlockSigninBtn();
+
+  // Update last used in DB (async, don't await)
+  updateBindingLastUsed(token);
+}
+
+async function updateBindingLastUsed(token) {
+  var all     = await getAllBindings();
+  var binding = all.find(function(b){ return b.deviceToken===token; });
+  if (binding) {
+    binding.lastUsed = new Date().toISOString();
+    await dbPut(DEVICE_BIND_STORE, binding);
+  }
+}
+
+// ── Device binding check in doSignIn ──────────────────────────────────
+// Returns true if the Staff ID is allowed on this device
+function deviceBindingCheck(sid) {
+  var localEmpId = getBoundEmpId();
+  if (!localEmpId) return true;  // unregistered device (admin kiosk mode)
+  var emp = staff.find(function(e){ return e.id===sid || e.empNo===sid; });
+  var resolvedId = emp ? emp.id : sid;
+  if (resolvedId !== localEmpId) {
+    showToast('⛔ This device is registered to ' + localEmpId + ' only. You cannot punch in for another staff.', 'err');
+    return false;
+  }
+  return true;
+}
+
+// ── Device Management (Admin panel) ───────────────────────────────────
+async function renderDeviceList() {
+  var el = document.getElementById('deviceListPanel');
+  if (!el) return;
+
+  // Populate staff dropdown
+  var sel = document.getElementById('adminBindStaff');
+  if (sel) sel.innerHTML = '<option value="">— Select staff —</option>' +
+    staff.map(function(e){ return '<option value="'+e.id+'">'+e.id+' — '+e.name+'</option>'; }).join('');
+
+  var all = await getAllBindings();
+  if (!all.length) {
+    el.innerHTML = '<div style="color:var(--ts);font-size:12px;padding:8px 0">No device bindings registered yet. Staff will register when they first open the app on their phone.</div>';
+    return;
+  }
+  el.innerHTML = '<div style="overflow-x:auto"><table class="tbl"><thead><tr>' +
+    '<th>Staff ID</th><th>Staff Name</th><th>Department</th>' +
+    '<th>Device Token</th><th>Status</th><th>Bound On</th><th>Last Used</th><th>Action</th>' +
+    '</tr></thead><tbody>' +
+    all.map(function(b){
+      var emp = staff.find(function(e){ return e.id===b.empId; });
+      return '<tr>' +
+        '<td><span class="chip">'+b.empId+'</span></td>' +
+        '<td style="font-weight:600">'+(emp?emp.name:b.empName||b.empId)+'</td>' +
+        '<td>'+(emp?emp.dept:'—')+'</td>' +
+        '<td style="font-size:10px;font-family:monospace;color:var(--ts);max-width:140px;overflow:hidden;text-overflow:ellipsis" title="'+b.deviceToken+'">'+b.deviceToken.slice(0,18)+'…</td>' +
+        '<td><span class="badge '+(b.active?'badge-green':'badge-red')+'">'+(b.active?'✓ Active':'Inactive')+'</span></td>' +
+        '<td style="font-size:11px">'+(b.boundOn?b.boundOn.slice(0,10):'—')+'</td>' +
+        '<td style="font-size:11px">'+(b.lastUsed?b.lastUsed.slice(0,16).replace('T',' '):'—')+'</td>' +
+        '<td><button class="btn btn-red btn-sm" onclick="adminUnbindDevice(\''+b.deviceToken+'\',\''+b.empId+'\')">🔓 Unbind</button></td>' +
+        '</tr>';
+    }).join('') +
+    '</tbody></table></div>';
+}
+
+async function adminUnbindDevice(token, empId) {
+  if (!confirm('Unbind device from ' + empId + '?\n\nThey will need to re-register next time they open the app.')) return;
+  var all = await getAllBindings();
+  var b   = all.find(function(x){ return x.deviceToken===token; });
+  if (b) { b.active=false; await dbPut(DEVICE_BIND_STORE, b); }
+  // If this is the current device, clear local binding too
+  if (localStorage.getItem(DEVICE_TOKEN_KEY) === token) {
+    localStorage.removeItem(DEVICE_BOUND_KEY);
+  }
+  renderDeviceList();
+  showToast('✓ Device unbound from ' + empId, 'ok');
+}
+
+async function adminUnbindStaff() {
+  var sel   = document.getElementById('adminBindStaff');
+  var empId = sel ? sel.value : '';
+  if (!empId) { showToast('Select a staff member first', 'err'); return; }
+  if (!confirm('Unbind all devices for ' + empId + '?')) return;
+  var all = await getAllBindings();
+  for (var b of all.filter(function(x){ return x.empId===empId; })) {
+    b.active = false;
+    await dbPut(DEVICE_BIND_STORE, b);
+  }
+  renderDeviceList();
+  showToast('✓ All devices unbound for ' + empId, 'ok');
+}
+
+async function adminBindDevice() {
+  var sel   = document.getElementById('adminBindStaff');
+  var empId = sel ? sel.value : '';
+  var token = (document.getElementById('adminBindToken')||{}).value.trim();
+  if (!empId || !token) { showToast('Select staff and enter device token', 'err'); return; }
+  var emp = staff.find(function(e){ return e.id===empId; });
+  if (!emp) { showToast('Staff not found', 'err'); return; }
+  var binding = {
+    id: token, deviceToken: token, empId: empId,
+    empName: emp.name, empNo: emp.empNo, dept: emp.dept,
+    companyId: emp.companyId, boundOn: new Date().toISOString(),
+    boundBy: 'admin', active: true, lastUsed: null,
+  };
+  await dbPut(DEVICE_BIND_STORE, binding);
+  renderDeviceList();
+  showToast('✓ Device bound to ' + emp.name, 'ok');
+}
+
+async function resetAllDevices() {
+  if (!confirm('⚠ Reset ALL device bindings?\n\nEvery staff member will need to re-register next time they open the app. This cannot be undone.')) return;
+  try {
+    if (db) {
+      var tx = db.transaction(DEVICE_BIND_STORE, 'readwrite');
+      tx.objectStore(DEVICE_BIND_STORE).clear();
+    }
+    localStorage.removeItem('hrsignin_deviceBindings');
+  } catch(e) {}
+  renderDeviceList();
+  showToast('All device bindings reset', 'ok');
+}
+
+async function exportDeviceCSV() {
+  var all = await getAllBindings();
+  var hdr = 'Staff ID,Staff Name,Department,Device Token,Status,Bound On,Last Used,Bound By\n';
+  var rows = all.map(function(b){
+    return [b.empId,'"'+b.empName+'"',b.dept,b.deviceToken,b.active?'Active':'Inactive',
+            b.boundOn?b.boundOn.slice(0,10):'',b.lastUsed?b.lastUsed.slice(0,16):'',b.boundBy||'self'].join(',');
+  });
+  var blob = new Blob([hdr+rows.join('\n')],{type:'text/csv;charset=utf-8'});
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a'); a.href=url; a.download='HRSignIn_DeviceBindings.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+  showToast('Device bindings exported', 'ok');
+}
+
+
+// ══════════════════════════════════════════════════════════════════════
+// PWA — Progressive Web App setup
+// Injects manifest.json and registers service worker inline
+// Works on Android (Chrome), iPhone (Safari 16.4+), Huawei browser
+// ══════════════════════════════════════════════════════════════════════
+
+(function initPWA() {
+
+  // ── Inline Web App Manifest ─────────────────────────────────────────
+  // This replaces needing a separate manifest.json file on a server.
+  var manifest = {
+    name:             'HRCloud Sign-In',
+    short_name:       'HR Sign-In',
+    description:      'Staff attendance with geofence verification — HRCloud Malaysia',
+    start_url:        './',
+    display:          'standalone',
+    background_color: '#0D1226',
+    theme_color:      '#4F6EF7',
+    orientation:      'portrait-primary',
+    lang:             'en-MY',
+    categories:       ['business', 'productivity'],
+    icons: [
+      {
+        src:   'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgcng9IjQwIiBmaWxsPSIjMEQxMjI2Ii8+PHJlY3QgeD0iMjAiIHk9IjIwIiB3aWR0aD0iMTUyIiBoZWlnaHQ9IjE1MiIgcng9IjI0IiBmaWxsPSIjNEY2RUY3Ii8+PHRleHQgeD0iOTYiIHk9IjExMCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjcyIiBmb250LXdlaWdodD0iOTAwIiBmaWxsPSIjZmZmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5IUjwvdGV4dD48L3N2Zz4=',
+        sizes: '192x192',
+        type:  'image/svg+xml',
+        purpose: 'any maskable'
+      },
+      {
+        src:   'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjkwIiBmaWxsPSIjMEQxMjI2Ii8+PHJlY3QgeD0iNTYiIHk9IjU2IiB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgcng9IjY0IiBmaWxsPSIjNEY2RUY3Ii8+PHRleHQgeD0iMjU2IiB5PSIyOTAiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxOTAiIGZvbnQtd2VpZ2h0PSI5MDAiIGZpbGw9IiNmZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiPkhSPC90ZXh0Pjwvc3ZnPg==',
+        sizes: '512x512',
+        type:  'image/svg+xml',
+        purpose: 'any maskable'
+      }
+    ],
+    shortcuts: [
+      {
+        name:      'Clock In',
+        short_name:'Clock In',
+        url:       './?action=signin',
+        description: 'Quick clock in',
+        icons: [{ src: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOTYiIGhlaWdodD0iOTYiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iNDgiIGN5PSI0OCIgcj0iNDgiIGZpbGw9IiMwNTk2NjkiLz48dGV4dCB4PSI0OCIgeT0iNjAiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSI0MCIgZmlsbD0iI2ZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+4pyTPC90ZXh0Pjwvc3ZnPg==', sizes: '96x96' }]
+      }
+    ]
+  };
+
+  // Inject manifest as blob URL (works without a server)
+  try {
+    var blob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
+    var url  = URL.createObjectURL(blob);
+    document.getElementById('pwaManifest').href = url;
+  } catch(e) { console.warn('Manifest injection failed:', e); }
+
+  // ── Offline support via Cache API (no Service Worker needed) ──────────
+  // Single-file HTML apps are already fully self-contained.
+  // We use the Cache API to store the page for fast reloads when offline.
+  // This avoids the blob:// SW registration error entirely.
+  if ('caches' in window) {
+    // Cache this page on first load
+    window.addEventListener('load', function() {
+      caches.open('hrsignin-v1').then(function(cache) {
+        // Cache the current page URL so it loads offline
+        var pageUrl = location.href.split('?')[0];
+        cache.add(pageUrl).catch(function() {
+          // Expected to fail in file:// — silently ignore
+        });
+      }).catch(function() {});
+    });
+  }
+
+  // ── Install prompt (Android Chrome) ────────────────────────────────
+  var deferredPrompt = null;
+  window.addEventListener('beforeinstallprompt', function(e) {
+    e.preventDefault();
+    deferredPrompt = e;
+    showInstallBanner();
+  });
+
+  window.addEventListener('appinstalled', function() {
+    hideInstallBanner();
+    showToast('✓ App installed on your home screen!', 'ok');
+  });
+
+  function showInstallBanner() {
+    var ibtn = document.getElementById('installAppBtn');
+    if (ibtn) ibtn.style.display = 'block';
+    var existing = document.getElementById('installBanner');
+    if (existing) return;
+    var banner = document.createElement('div');
+    banner.id = 'installBanner';
+    banner.style.cssText =
+      'position:fixed;bottom:0;left:0;right:0;z-index:9000;' +
+      'background:linear-gradient(135deg,#0D1226,#1a2040);' +
+      'padding:16px 20px;display:flex;align-items:center;gap:12px;' +
+      'box-shadow:0 -4px 24px rgba(0,0,0,.4);';
+    banner.innerHTML =
+      '<div style="font-size:32px">📲</div>' +
+      '<div style="flex:1;color:#fff">' +
+        '<div style="font-weight:800;font-size:14px">Install HRCloud Sign-In</div>' +
+        '<div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:2px">Add to home screen — works offline, no app store needed</div>' +
+      '</div>' +
+      '<button onclick="triggerInstall()" style="background:#4F6EF7;color:#fff;border:none;border-radius:10px;padding:10px 18px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit">Install</button>' +
+      '<button onclick="hideInstallBanner()" style="background:none;border:none;color:rgba(255,255,255,.4);font-size:22px;cursor:pointer;padding:4px 8px">✕</button>';
+    document.body.appendChild(banner);
+  }
+
+  window.triggerInstall = function() {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(function(r) {
+      if (r.outcome === 'accepted') showToast('Installing…', 'ok');
+      deferredPrompt = null;
+      hideInstallBanner();
+    });
+  };
+
+  window.hideInstallBanner = function() {
+    var ibtn = document.getElementById('installAppBtn');
+    if (ibtn) ibtn.style.display = 'none';
+    var b = document.getElementById('installBanner');
+    if (b) b.remove();
+  };
+
+  // ── iOS/Safari install instructions ────────────────────────────────
+  var isIOS    = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  var isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  var isInStandaloneMode = ('standalone' in window.navigator) && window.navigator.standalone;
+
+  if (isIOS && isSafari && !isInStandaloneMode) {
+    // Show iOS-specific "Add to Home Screen" instruction after 3 seconds
+    setTimeout(function() {
+      var tip = document.createElement('div');
+      tip.id  = 'iosTip';
+      tip.style.cssText =
+        'position:fixed;bottom:0;left:0;right:0;z-index:9000;' +
+        'background:linear-gradient(135deg,#0D1226,#1a2040);' +
+        'padding:16px 20px;color:#fff;box-shadow:0 -4px 24px rgba(0,0,0,.4);';
+      tip.innerHTML =
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start">' +
+          '<div>' +
+            '<div style="font-weight:800;font-size:14px;margin-bottom:6px">📲 Install on iPhone / iPad</div>' +
+            '<div style="font-size:12px;color:rgba(255,255,255,.7);line-height:1.8">' +
+              '1. Tap the Share button <strong>⎙</strong> at the bottom of Safari<br>' +
+              '2. Scroll down and tap <strong>"Add to Home Screen"</strong><br>' +
+              '3. Tap <strong>Add</strong> — the app icon will appear on your home screen' +
+            '</div>' +
+          '</div>' +
+          '<button onclick="document.getElementById(\x27iosTip\x27).remove()" style="background:none;border:none;color:rgba(255,255,255,.4);font-size:22px;cursor:pointer;padding:0 0 0 12px">\u2715</button>' +
+        '</div>';
+      document.body.appendChild(tip);
+    }, 3000);
+  }
+
+  // ── Huawei / other Android instructions ───────────────────────────
+  var isHuawei = /huawei|hmscore|harmonyos/i.test(navigator.userAgent);
+  if (isHuawei && !isInStandaloneMode) {
+    setTimeout(function() {
+      showToast('📲 Tip: Tap ⋮ menu → "Add to Home screen" to install', 'ok');
+    }, 4000);
+  }
+
+})(); // end initPWA
+
+</script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+{
+  "version": 2,
+  "name": "hrcloud-malaysia",
+  "routes": [
+    { "src": "/app(.*)", "dest": "/app$1" },
+    { "src": "/signin(.*)", "dest": "/signin.html" },
+    { "src": "/templates/(.*)", "dest": "/templates/$1" },
+    { "src": "/(.*)", "dest": "/index.html" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options",    "value": "nosniff" },
+        { "key": "X-Frame-Options",           "value": "SAMEORIGIN" },
+        { "key": "Permissions-Policy",        "value": "geolocation=*" },
+        { "key": "Cache-Control",             "value": "public, max-age=0, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/app/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=3600" }
+      ]
+    }
+  ]
+}

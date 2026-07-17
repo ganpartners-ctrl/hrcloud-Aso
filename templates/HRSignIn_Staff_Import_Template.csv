@@ -1,0 +1,17 @@
+# HRCloud Sign-In — Staff Import Template
+# Instructions:
+#   1. Delete ALL rows starting with # before uploading
+#   2. One row per staff member
+#   3. Employee ID MUST match the Employee ID in HRCloud for attendance sync to work
+#   4. Company ID must match a company already in the system (e.g. CO001)
+#   5. Employment Type: Permanent / Contract / Part-Time / Internship / Probation
+#   6. Join Date format: YYYY-MM-DD
+#   7. Save as CSV UTF-8 before uploading
+Employee ID,Employee No,Full Name,Preferred Name,NRIC,Department,Grade,Role,Employment Type,Company ID,Join Date
+E001,EMP001,Ahmad Farid bin Azman,Farid,850101-14-1234,Finance,G4,HR Manager,Permanent,CO001,2018-03-15
+E002,EMP002,Siti Nuraini binti Hassan,Ain,900522-10-5678,HR,G3,HR Executive,Permanent,CO001,2019-06-01
+E003,EMP003,Rajesh Kumar a/l Subramaniam,Rajesh,881115-08-3456,IT,G4,IT Manager,Permanent,CO001,2017-01-10
+E004,EMP004,Wei Ting Lim,Wei Ting,950308-14-7890,Sales,G2,Sales Executive,Permanent,CO001,2021-04-01
+E005,EMP005,Nurul Hidayah binti Razak,Hidayah,920720-04-2345,Operations,G2,Operations Assistant,Probation,CO001,2022-10-01
+E101,EMP101,Ali bin Ahmad,Ali,780615-05-3456,Operations,G3,Warehouse Supervisor,Permanent,CO002,2020-01-15
+E102,EMP102,Rajan a/l Krishnan,Rajan,860920-08-1234,Logistics,G2,Driver,Permanent,CO002,2021-06-01
