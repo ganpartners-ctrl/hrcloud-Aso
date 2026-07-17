@@ -1,0 +1,7 @@
+*.zip
+backend/
+database/
+frontend/
+.github/
+docker-compose.yml
+render.yaml
