@@ -24,8 +24,19 @@ router.get('/:id', verifyToken, async (req, res) => {
 router.post('/', requirePlatformAdmin, async (req, res) => {
   const c = req.body;
   const pinHash = c.superAdminPin ? await bcrypt.hash(c.superAdminPin, 10) : null;
+  const license = c.license || {};
+  const licenseTier = license.tier || c.licenseTier || c.licTier || 'growth';
+  const maxStaffByTier = { starter: 10, growth: 25, business: 50, enterprise: 200, unlimited: 9999 };
+  const maxStaff = Number(license.maxStaff || license.max_staff || c.licenseMaxStaff || c.licMaxStaff || maxStaffByTier[licenseTier] || 25);
+  const expiry = license.expiry || c.licenseExpiry || c.licExpiry || '2027-12-31';
+  const licenseStatus = license.status || c.licenseStatus || 'Active';
+  const licenseKey = license.key || c.licenseKey || `HRCLOUD${c.id}-${new Date().getFullYear()}`;
+  const issuedBy = license.issuedBy || license.issued_by || c.issuedBy || 'PA001';
+  const issuedOn = license.issuedOn || license.issued_on || new Date().toISOString().slice(0, 10);
+  const client = await pool.connect();
   try {
-    const { rows } = await pool.query(
+    await client.query('BEGIN');
+    const { rows } = await client.query(
       `INSERT INTO companies
         (id,name,trade_name,ssm_no,lhdn_no,epf_no,socso_no,eis_no,hrdf_no,
          phone,email,addr1,addr2,city,postcode,state,country,
@@ -38,8 +49,20 @@ router.post('/', requirePlatformAdmin, async (req, res) => {
        c.bankName||c.bank_name, c.bankAcc||c.bank_acc,
        c.payrollCycle||c.payroll_cycle||'Monthly', c.payDay||c.pay_day,
        c.status||'Active', c.superAdminId||c.super_admin_id, pinHash]);
+    await client.query(
+      `INSERT INTO licenses (company_id,tier,max_staff,status,expiry,key,issued_by,issued_on)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+       ON CONFLICT (company_id) DO NOTHING`,
+      [rows[0].id, licenseTier, maxStaff, licenseStatus, expiry, licenseKey, issuedBy, issuedOn]
+    );
+    await client.query('COMMIT');
     res.status(201).json(rows[0]);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) {
+    await client.query('ROLLBACK').catch(() => {});
+    res.status(500).json({ error: e.message });
+  } finally {
+    client.release();
+  }
 });
 
 router.put('/:id', verifyToken, async (req, res) => {

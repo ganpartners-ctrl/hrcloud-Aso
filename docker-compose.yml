@@ -1,0 +1,63 @@
+version: '3.9'
+
+services:
+
+  # ── PostgreSQL Database ──────────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    container_name: hrcloud_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER:     hrcloud
+      POSTGRES_PASSWORD: hrcloud_pass
+      POSTGRES_DB:       progressDB
+    volumes:
+      - pgdata:/var/lib/postgresql/data          # persistent data
+      - ./backend/migrations/001_init.sql:/docker-entrypoint-initdb.d/01_schema.sql
+      - ./backend/seeds/seed_demo.sql:/docker-entrypoint-initdb.d/02_seed.sql
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hrcloud -d progressDB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ── Node.js API Backend ─────────────────────────────────────────────
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: hrcloud_api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://hrcloud:hrcloud_pass@db:5432/progressDB
+      JWT_SECRET:   change_this_in_production_to_a_long_random_string
+      PGSSLMODE:    disable
+      PLATFORM_ADMIN_ID:   PA001
+      PLATFORM_ADMIN_PASS: HRCLOUD2025
+      PORT:         4000
+      NODE_ENV:     production
+      ALLOWED_ORIGINS: http://localhost:3000,http://localhost:3100
+    ports:
+      - "4000:4000"
+
+  # ── Static Frontend ─────────────────────────────────────────────────
+  web:
+    image: nginx:alpine
+    container_name: hrcloud_web
+    restart: unless-stopped
+    depends_on:
+      - api
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - "3100:80"
+
+volumes:
+  pgdata:
+    driver: local

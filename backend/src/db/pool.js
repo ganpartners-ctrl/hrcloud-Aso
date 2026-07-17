@@ -2,9 +2,14 @@
 const { Pool } = require('pg');
 require('dotenv').config();
 
+const sslDisabled = ['disable', 'false', '0', 'no'].includes(
+  String(process.env.PGSSLMODE || process.env.DB_SSL || '').toLowerCase()
+);
+const sslEnabled = !sslDisabled && process.env.NODE_ENV === 'production';
+
 const pool = new Pool(
   process.env.DATABASE_URL
-    ? { connectionString: process.env.DATABASE_URL, ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false }
+    ? { connectionString: process.env.DATABASE_URL, ssl: sslEnabled ? { rejectUnauthorized: false } : false }
     : {
         host:     process.env.DB_HOST     || 'localhost',
         port:     parseInt(process.env.DB_PORT) || 5432,

@@ -3,6 +3,15 @@ const router = require('express').Router();
 const pool   = require('../db/pool');
 const { verifyToken, requireSameCompany } = require('../middleware/auth');
 
+function dateOrNull(...values) {
+  for (const value of values) {
+    if (value === undefined || value === null) continue;
+    if (value === '') return null;
+    return value;
+  }
+  return null;
+}
+
 const cols = `
   id, company_id, emp_no, name, preferred_name, gender, dob, nric, passport_no,
   nationality, email, work_email, phone, religion, race, marital_status,
@@ -64,16 +73,16 @@ router.post('/', verifyToken, async (req, res) => {
         $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,
         $17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,
         $31,$32,$33,$34,$35,$36,$37,$38,$39,$40,$41,$42,$43,$44,
-        $45,$46,$47,$48,$49,$50,$51,$52,$53,$54,$55,$56,$57,$58,$59
+        $45,$46,$47,$48,$49,$50,$51,$52,$53,$54,$55,$56,$57,$58,$59,$60
       ) RETURNING ${cols}`,
       [e.id, e.company_id||e.companyId, e.emp_no||e.empNo, e.name, e.preferred_name||e.preferredName,
-       e.gender, e.dob, e.nric, e.passport_no||e.passportNo,
+       e.gender, dateOrNull(e.dob), e.nric, e.passport_no||e.passportNo,
        e.nationality||'Malaysian', e.email, e.work_email||e.workEmail, e.phone,
        e.religion, e.race, e.marital_status||e.maritalStatus||'Single',
        e.spouse_nric||e.spouseNric, e.spouse_name||e.spouseName,
        e.children||0, e.pcb_children||e.pcbChildren||0, e.spouse_relief||e.spouseRelief||false,
        e.dept, e.grade, e.role||'Staff', e.position, e.employment_type||e.employmentType||'Permanent',
-       e.join_date||e.joinDate, e.confirm_date||e.confirmDate, e.status||'Active',
+       dateOrNull(e.join_date, e.joinDate), dateOrNull(e.confirm_date, e.confirmDate), e.status||'Active',
        e.epf_no||e.epfNo, e.socso_no||e.socsoNo, e.eis_no||e.eisNo, e.tax_no||e.taxNo, e.tax_branch||e.taxBranch,
        e.basic||0, e.allowance||0, e.travel||0, e.other||0, e.bonus||0, e.commission||0,
        e.epf_rate||e.epfRate||11, e.epf_rate_er||e.epfRateEr||13,
@@ -106,22 +115,26 @@ router.put('/:id', verifyToken, async (req, res) => {
         pa_ins=$44, medical_insurance=$45,
         zakat_eligible=$46, zakat_type=$47, zakat_amount=$48, zakat_rate=$49,
         zakat_body=$50, zakat_ref_no=$51,
-        bank_name=$52, bank_acc=$53, notes=$54, updated_at=NOW()
+        bank_name=$52, bank_acc=$53, notes=$54,
+        addr1=$55, addr2=$56, city=$57, postcode=$58, state=$59,
+        cp38_date_from=$60, cp38_date_to=$61, updated_at=NOW()
       WHERE id=$1 RETURNING ${cols}`,
       [req.params.id,
-       e.name, e.preferred_name||e.preferredName, e.gender, e.dob, e.nric, e.passport_no||e.passportNo,
+       e.name, e.preferred_name||e.preferredName, e.gender, dateOrNull(e.dob), e.nric, e.passport_no||e.passportNo,
        e.nationality, e.email, e.work_email||e.workEmail, e.phone, e.religion, e.race,
        e.marital_status||e.maritalStatus, e.spouse_nric||e.spouseNric, e.spouse_name||e.spouseName,
        e.children, e.pcb_children||e.pcbChildren, e.spouse_relief||e.spouseRelief,
        e.dept, e.grade, e.role, e.position, e.employment_type||e.employmentType,
-       e.join_date||e.joinDate, e.confirm_date||e.confirmDate, e.resign_date||e.resignDate, e.status,
+       dateOrNull(e.join_date, e.joinDate), dateOrNull(e.confirm_date, e.confirmDate), dateOrNull(e.resign_date, e.resignDate), e.status,
        e.epf_no||e.epfNo, e.socso_no||e.socsoNo, e.eis_no||e.eisNo, e.tax_no||e.taxNo, e.tax_branch||e.taxBranch,
        e.basic, e.allowance, e.travel, e.other, e.bonus, e.commission,
        e.epf_rate||e.epfRate, e.epf_rate_er||e.epfRateEr, e.hrdf_enabled??e.hrdfEnabled, e.cp38_amount||e.cp38Amount,
        e.pa_ins||e.paIns, e.medical_insurance||e.medicalInsurance,
        e.zakat_eligible||e.zakatEligible, e.zakat_type||e.zakatType, e.zakat_amount||e.zakatAmount,
        e.zakat_rate||e.zakatRate, e.zakat_body||e.zakatBody, e.zakat_ref_no||e.zakatRefNo,
-       e.bank_name||e.bankName, e.bank_acc||e.bankAcc, e.notes]
+       e.bank_name||e.bankName, e.bank_acc||e.bankAcc, e.notes,
+       e.addr1, e.addr2, e.city, e.postcode, e.state,
+       dateOrNull(e.cp38_date_from, e.cp38DateFrom), dateOrNull(e.cp38_date_to, e.cp38DateTo)]
     );
     if (!rows.length) return res.status(404).json({ error: 'Not found' });
     res.json(rows[0]);

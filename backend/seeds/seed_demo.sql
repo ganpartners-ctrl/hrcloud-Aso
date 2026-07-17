@@ -27,7 +27,7 @@ INSERT INTO companies (
   '03-22345678', 'hr@techcorp.com.my',
   'Level 18, Menara TechCorp', 'Jalan Ampang', 'Kuala Lumpur', '50450', 'W.P. Kuala Lumpur', 'Malaysia',
   'Maybank', '1234567890', 'Monthly', 'Last Working Day', 'Active',
-  'SA001', '$2a$10$22GVcMkLb0HqtHMQBV7b4uzzGUnvY4qzMR74hVtKStLrBjFolV3nK'
+  'SA001', '$2a$10$rOcKmMl3qCy.1pIFN7zMGeHuKGasFGJGmFm8YUIPQPe.0sFP2u3Kq'
   -- pin: Admin@TC2025
 ),
 (
@@ -36,7 +36,7 @@ INSERT INTO companies (
   '03-33456789', 'hr@tclogistics.com.my',
   'Lot 5, Jalan Industri 3', 'Kawasan Perindustrian Hicom', 'Shah Alam', '40150', 'Selangor', 'Malaysia',
   'CIMB', '9876543210', 'Monthly', '28th', 'Active',
-  'SA002', '$2a$10$UkynUWXlY/081L6/FX75ruNAwjBjDhs7fWj38nUXTbY9QVmM52ziG'
+  'SA002', '$2a$10$GK8CnZ5qHkJm7VkKgR8lnOWnz4D3JkHkW1BvGpJNl5WmDjpGq8xA6'
   -- pin: Admin@TCL2025
 )
 ON CONFLICT (id) DO NOTHING;
@@ -52,15 +52,15 @@ ON CONFLICT (company_id) DO NOTHING;
 INSERT INTO platform_staff (id, name, email, role, password_hash, permissions, is_active)
 VALUES
   ('PA001', 'Platform Admin',   'admin@hrcloud.my',   'platform_admin',
-   '$2a$10$6ejF4V/7rEegS2RlcivpJusWquoAVequeSwbbrnAu14fX11QKUA.y',
+   '$2a$10$hK7GcVMW4jRzM3FpLqF6QerNjLDKKL9v5Xvq3WuMJzXKQQfD4DJVK',
    -- pass: HRCLOUD2025
    '{"all":true}', true),
   ('SA001', 'Support Agent Ahmad', 'ahmad@hrcloud.my', 'support',
-   '$2a$10$4Pml5upvkbnwLXjEdlrG5.A8D9ONV9fxU7a/xkOfkoW/5d0/sjanS',
+   '$2a$10$X9mNdQpTvW8kL5jGrB2hCeM4FnDsHpKvQwRtUyIoPlMbNzAqCxEu6',
    -- pass: Agent@123
    '{"support":true,"chat":true}', true),
   ('SA002', 'Sales Reza',       'reza@hrcloud.my',    'sales',
-   '$2a$10$G/9g8g.oD1K5W9Gb5KiaAOopGkMJxju0eYWjUDHJiJJ64kwFs9QBi',
+   '$2a$10$Y4pKeLdFvN9mJ2hBs3gDRfQ8MrEwGjIpTkWuXvOaLnBzCeH5SqFt1',
    -- pass: Sales@123
    '{"crm":true}', true)
 ON CONFLICT (id) DO NOTHING;
