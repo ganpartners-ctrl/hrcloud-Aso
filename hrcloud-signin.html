@@ -865,6 +865,22 @@ hr.div { border: none; border-top: 1.5px solid var(--border); margin: 18px 0; }
       <button class="btn btn-green btn-full" id="signinBtn" onclick="doSignIn()" disabled>
         <span>🕐</span> <span id="signinBtnLabel">Clock In / Out</span>
       </button>
+
+      <div style="margin-top:14px;border-top:1.5px solid var(--border);padding-top:14px">
+        <div class="card-title" style="font-size:13px;margin-bottom:6px">Admin / Master Admin Login</div>
+        <div class="card-sub" style="margin-bottom:10px">Click a password below to open the admin login screen.</div>
+        <div style="display:grid;gap:8px">
+          <button class="btn btn-ghost btn-full" onclick="quickAdminLogin('platform','', 'PA001', 'HRCLOUD2025')">
+            Master Admin · PA001 · <strong>HRCLOUD2025</strong>
+          </button>
+          <button class="btn btn-ghost btn-full" onclick="quickAdminLogin('superadmin','CO001', 'SA001', 'Admin@TC2025')">
+            Company Admin · SA001 · <strong>Admin@TC2025</strong>
+          </button>
+          <button class="btn btn-ghost btn-full" onclick="quickAdminLogin('superadmin','CO002', 'SA002', 'Admin@TCL2025')">
+            Company Admin · SA002 · <strong>Admin@TCL2025</strong>
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- Today's log -->
@@ -2795,6 +2811,24 @@ function selectAdminRole(role) {
   if (idInput) idInput.placeholder = role==='platform' ? 'PA001' : 'SA001';
 }
 
+function quickAdminLogin(role, companyId, adminId, password) {
+  pendingPage = 'admin';
+  showAdminLoginScreen();
+  selectAdminRole(role);
+  setTimeout(function(){
+    var co = document.getElementById('loginCoSelect');
+    var id = document.getElementById('adminLoginId');
+    var pw = document.getElementById('adminLoginPw');
+    if (co && companyId) co.value = companyId;
+    if (id) id.value = adminId;
+    if (pw) {
+      pw.value = password;
+      pw.type = 'text';
+      pw.focus();
+    }
+  }, 80);
+}
+
 // ── Open Admin Login ──────────────────────────────────────────────────
 function requireAdminThen(page) {
   if (adminSession) {
@@ -3239,9 +3273,8 @@ async function checkDeviceBinding() {
   renderMobileDeviceRegistration();
 
   if (!localEmpId) {
-    // No local binding — show registration screen
-    showDeviceRegScreen(token);
-    return false;
+    // Device registration now lives under the Mobile App tab.
+    return true;
   }
 
   // Verify against DB binding
