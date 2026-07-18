@@ -6,14 +6,23 @@ const { verifyToken, requirePlatformAdmin } = require('../middleware/auth');
 
 router.get('/', verifyToken, async (req, res) => {
   try {
+    const params = [];
+    let where = '';
+    if (req.user.role !== 'platform_admin') {
+      params.push(req.user.companyId);
+      where = 'WHERE c.id=$1';
+    }
     const { rows } = await pool.query(
       `SELECT c.*, l.tier, l.status as lic_status, l.expiry, l.max_staff
-       FROM companies c LEFT JOIN licenses l ON l.company_id=c.id ORDER BY c.name`);
+       FROM companies c LEFT JOIN licenses l ON l.company_id=c.id ${where} ORDER BY c.name`, params);
     res.json(rows);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 router.get('/:id', verifyToken, async (req, res) => {
+  if (req.user.role !== 'platform_admin' && req.user.companyId !== req.params.id) {
+    return res.status(403).json({ error: 'Access denied to this company' });
+  }
   try {
     const { rows } = await pool.query('SELECT * FROM companies WHERE id=$1', [req.params.id]);
     if (!rows.length) return res.status(404).json({ error: 'Not found' });
@@ -55,6 +64,24 @@ router.post('/', requirePlatformAdmin, async (req, res) => {
        ON CONFLICT (company_id) DO NOTHING`,
       [rows[0].id, licenseTier, maxStaff, licenseStatus, expiry, licenseKey, issuedBy, issuedOn]
     );
+    await client.query(
+      `INSERT INTO hr_config (company_id,departments,grades,roles,employment_types,statuses)
+       VALUES ($1,'[]','[]','[]','[]','[]')
+       ON CONFLICT (company_id) DO NOTHING`,
+      [rows[0].id]
+    );
+    await client.query(
+      `INSERT INTO leave_config (company_id,leave_types,public_holidays,entitlements)
+       VALUES ($1,'[]','[]','[]')
+       ON CONFLICT (company_id) DO NOTHING`,
+      [rows[0].id]
+    );
+    await client.query(
+      `INSERT INTO payroll_config (company_id)
+       VALUES ($1)
+       ON CONFLICT (company_id) DO NOTHING`,
+      [rows[0].id]
+    );
     await client.query('COMMIT');
     res.status(201).json(rows[0]);
   } catch (e) {
@@ -66,6 +93,9 @@ router.post('/', requirePlatformAdmin, async (req, res) => {
 });
 
 router.put('/:id', verifyToken, async (req, res) => {
+  if (req.user.role !== 'platform_admin' && req.user.companyId !== req.params.id) {
+    return res.status(403).json({ error: 'Access denied to this company' });
+  }
   const c = req.body;
   try {
     const { rows } = await pool.query(

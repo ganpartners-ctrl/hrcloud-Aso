@@ -4,8 +4,20 @@ const pool   = require('../db/pool');
 const { verifyToken, requirePlatformAdmin } = require('../middleware/auth');
 
 router.get('/',          verifyToken,            async (req, res) => {
-  try { const {rows}=await pool.query('SELECT l.*,c.name as company_name FROM licenses l JOIN companies c ON c.id=l.company_id ORDER BY l.company_id'); res.json(rows); } catch(e){res.status(500).json({error:e.message})}});
+  try {
+    const params = [];
+    let where = '';
+    if (req.user.role !== 'platform_admin') {
+      params.push(req.user.companyId);
+      where = 'WHERE l.company_id=$1';
+    }
+    const {rows}=await pool.query(`SELECT l.*,c.name as company_name FROM licenses l JOIN companies c ON c.id=l.company_id ${where} ORDER BY l.company_id`, params);
+    res.json(rows);
+  } catch(e){res.status(500).json({error:e.message})}});
 router.get('/:companyId',verifyToken,            async (req, res) => {
+  if (req.user.role !== 'platform_admin' && req.user.companyId !== req.params.companyId) {
+    return res.status(403).json({ error: 'Access denied to this company' });
+  }
   try { const {rows}=await pool.query('SELECT * FROM licenses WHERE company_id=$1',[req.params.companyId]); res.json(rows[0]||null); } catch(e){res.status(500).json({error:e.message})}});
 router.post('/',         requirePlatformAdmin,   async (req, res) => {
   const l=req.body;

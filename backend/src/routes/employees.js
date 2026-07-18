@@ -1,6 +1,7 @@
 // src/routes/employees.js
 const router = require('express').Router();
 const pool   = require('../db/pool');
+const bcrypt = require('bcryptjs');
 const { verifyToken, requireSameCompany } = require('../middleware/auth');
 
 function dateOrNull(...values) {
@@ -23,6 +24,7 @@ const cols = `
   pa_ins, medical_insurance,
   zakat_eligible, zakat_type, zakat_amount, zakat_rate, zakat_body, zakat_ref_no,
   permit_no, permit_exp, bank_name, bank_acc, bank_code,
+  mobile_device_id, mobile_access, mobile_bound_on, geo_lat, geo_lng, geo_radius,
   addr1, addr2, city, postcode, state, photo_url, notes,
   created_at, updated_at
 `;
@@ -30,7 +32,7 @@ const cols = `
 // GET /api/employees?companyId=CO001&status=Active&dept=Finance
 router.get('/', verifyToken, async (req, res) => {
   const { companyId, status, dept, search } = req.query;
-  const coId = companyId || req.user.companyId;
+  const coId = req.user.role === 'platform_admin' ? (companyId || req.user.companyId) : req.user.companyId;
   if (!coId) return res.status(400).json({ error: 'companyId required' });
   try {
     let q = `SELECT ${cols} FROM employees WHERE company_id=$1`;
@@ -47,7 +49,8 @@ router.get('/', verifyToken, async (req, res) => {
 // GET /api/employees/:id
 router.get('/:id', verifyToken, async (req, res) => {
   try {
-    const { rows } = await pool.query(`SELECT ${cols} FROM employees WHERE id=$1`, [req.params.id]);
+    const params = req.user.role === 'platform_admin' ? [req.params.id] : [req.params.id, req.user.companyId];
+    const { rows } = await pool.query(`SELECT ${cols} FROM employees WHERE id=$1${req.user.role === 'platform_admin' ? '' : ' AND company_id=$2'}`, params);
     if (!rows.length) return res.status(404).json({ error: 'Employee not found' });
     res.json(rows[0]);
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -56,7 +59,10 @@ router.get('/:id', verifyToken, async (req, res) => {
 // POST /api/employees
 router.post('/', verifyToken, async (req, res) => {
   const e = req.body;
+  const companyId = req.user.role === 'platform_admin' ? (e.company_id||e.companyId) : req.user.companyId;
+  if (!companyId) return res.status(400).json({ error: 'companyId required' });
   try {
+    const passwordHash = e.password ? await bcrypt.hash(String(e.password), 10) : null;
     const { rows } = await pool.query(`
       INSERT INTO employees (
         id, company_id, emp_no, name, preferred_name, gender, dob, nric, passport_no,
@@ -68,14 +74,16 @@ router.post('/', verifyToken, async (req, res) => {
         epf_rate, epf_rate_er, hrdf_enabled, cp38_amount,
         pa_ins, medical_insurance,
         zakat_eligible, zakat_type, zakat_amount, zakat_rate, zakat_body, zakat_ref_no,
-        bank_name, bank_acc, addr1, addr2, city, postcode, state, notes
+        bank_name, bank_acc, mobile_device_id, mobile_access, mobile_bound_on, geo_lat, geo_lng, geo_radius,
+        addr1, addr2, city, postcode, state, notes, password_hash
       ) VALUES (
         $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,
         $17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,
         $31,$32,$33,$34,$35,$36,$37,$38,$39,$40,$41,$42,$43,$44,
-        $45,$46,$47,$48,$49,$50,$51,$52,$53,$54,$55,$56,$57,$58,$59,$60
+        $45,$46,$47,$48,$49,$50,$51,$52,$53,$54,$55,$56,$57,$58,$59,$60,
+        $61,$62,$63,$64,$65,$66,$67
       ) RETURNING ${cols}`,
-      [e.id, e.company_id||e.companyId, e.emp_no||e.empNo, e.name, e.preferred_name||e.preferredName,
+      [e.id, companyId, e.emp_no||e.empNo, e.name, e.preferred_name||e.preferredName,
        e.gender, dateOrNull(e.dob), e.nric, e.passport_no||e.passportNo,
        e.nationality||'Malaysian', e.email, e.work_email||e.workEmail, e.phone,
        e.religion, e.race, e.marital_status||e.maritalStatus||'Single',
@@ -92,7 +100,9 @@ router.post('/', verifyToken, async (req, res) => {
        e.zakat_amount||e.zakatAmount||0, e.zakat_rate||e.zakatRate||0,
        e.zakat_body||e.zakatBody, e.zakat_ref_no||e.zakatRefNo,
        e.bank_name||e.bankName, e.bank_acc||e.bankAcc,
-       e.addr1, e.addr2, e.city, e.postcode, e.state, e.notes]
+       e.mobile_device_id||e.mobileDeviceId, e.mobile_access||e.mobileAccess||'Allowed',
+       dateOrNull(e.mobile_bound_on, e.mobileBoundOn), e.geo_lat||e.geoLat, e.geo_lng||e.geoLng, e.geo_radius||e.geoRadius,
+       e.addr1, e.addr2, e.city, e.postcode, e.state, e.notes, passwordHash]
     );
     res.status(201).json(rows[0]);
   } catch (e2) { res.status(500).json({ error: e2.message }); }
@@ -101,7 +111,9 @@ router.post('/', verifyToken, async (req, res) => {
 // PUT /api/employees/:id — full update
 router.put('/:id', verifyToken, async (req, res) => {
   const e = req.body;
+  const companyClause = ' AND (COALESCE($62, company_id)=company_id)';
   try {
+    const passwordHash = e.password ? await bcrypt.hash(String(e.password), 10) : null;
     const { rows } = await pool.query(`
       UPDATE employees SET
         name=$2, preferred_name=$3, gender=$4, dob=$5, nric=$6, passport_no=$7,
@@ -117,8 +129,16 @@ router.put('/:id', verifyToken, async (req, res) => {
         zakat_body=$50, zakat_ref_no=$51,
         bank_name=$52, bank_acc=$53, notes=$54,
         addr1=$55, addr2=$56, city=$57, postcode=$58, state=$59,
-        cp38_date_from=$60, cp38_date_to=$61, updated_at=NOW()
-      WHERE id=$1 RETURNING ${cols}`,
+        cp38_date_from=$60, cp38_date_to=$61,
+        password_hash=COALESCE($63,password_hash),
+        mobile_device_id=COALESCE($64,mobile_device_id),
+        mobile_access=COALESCE($65,mobile_access),
+        mobile_bound_on=COALESCE($66,mobile_bound_on),
+        geo_lat=COALESCE($67,geo_lat),
+        geo_lng=COALESCE($68,geo_lng),
+        geo_radius=COALESCE($69,geo_radius),
+        updated_at=NOW()
+      WHERE id=$1${companyClause} RETURNING ${cols}`,
       [req.params.id,
        e.name, e.preferred_name||e.preferredName, e.gender, dateOrNull(e.dob), e.nric, e.passport_no||e.passportNo,
        e.nationality, e.email, e.work_email||e.workEmail, e.phone, e.religion, e.race,
@@ -134,7 +154,15 @@ router.put('/:id', verifyToken, async (req, res) => {
        e.zakat_rate||e.zakatRate, e.zakat_body||e.zakatBody, e.zakat_ref_no||e.zakatRefNo,
        e.bank_name||e.bankName, e.bank_acc||e.bankAcc, e.notes,
        e.addr1, e.addr2, e.city, e.postcode, e.state,
-       dateOrNull(e.cp38_date_from, e.cp38DateFrom), dateOrNull(e.cp38_date_to, e.cp38DateTo)]
+       dateOrNull(e.cp38_date_from, e.cp38DateFrom), dateOrNull(e.cp38_date_to, e.cp38DateTo)].concat([req.user.companyId || null]).concat([
+         passwordHash,
+         e.mobile_device_id||e.mobileDeviceId||null,
+         e.mobile_access||e.mobileAccess||null,
+         dateOrNull(e.mobile_bound_on, e.mobileBoundOn),
+         e.geo_lat||e.geoLat||null,
+         e.geo_lng||e.geoLng||null,
+         e.geo_radius||e.geoRadius||null
+       ])
     );
     if (!rows.length) return res.status(404).json({ error: 'Not found' });
     res.json(rows[0]);
@@ -144,9 +172,10 @@ router.put('/:id', verifyToken, async (req, res) => {
 // DELETE /api/employees/:id (terminate, not delete)
 router.delete('/:id', verifyToken, async (req, res) => {
   try {
+    const params = req.user.role === 'platform_admin' ? [req.params.id] : [req.params.id, req.user.companyId];
     await pool.query(
-      "UPDATE employees SET status='Terminated', resign_date=CURRENT_DATE, updated_at=NOW() WHERE id=$1",
-      [req.params.id]);
+      "UPDATE employees SET status='Terminated', resign_date=CURRENT_DATE, updated_at=NOW() WHERE id=$1" + (req.user.role === 'platform_admin' ? '' : ' AND company_id=$2'),
+      params);
     res.json({ success: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });

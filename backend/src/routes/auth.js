@@ -54,10 +54,15 @@ router.post('/employee', async (req, res) => {
     if (!rows.length) return res.status(401).json({ error: 'Employee not found' });
     const emp = rows[0];
     if (emp.status === 'Terminated') return res.status(401).json({ error: 'Account is terminated' });
-    // Password = last 6 digits of NRIC
-    const nric = (emp.nric || '').replace(/[^0-9]/g, '');
-    const expected = nric.length >= 6 ? nric.slice(-6) : nric;
-    if (password !== expected) return res.status(401).json({ error: 'Invalid credentials' });
+    let ok = false;
+    if (emp.password_hash) {
+      ok = await bcrypt.compare(password, emp.password_hash);
+    } else {
+      const nric = (emp.nric || '').replace(/[^0-9]/g, '');
+      const expected = nric.length >= 6 ? nric.slice(-6) : nric;
+      ok = password === expected;
+    }
+    if (!ok) return res.status(401).json({ error: 'Invalid credentials' });
     const token = signToken({
       id: emp.id, role: emp.role, companyId: emp.company_id,
       name: emp.name, empNo: emp.emp_no, dept: emp.dept
